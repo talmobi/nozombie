@@ -13,7 +13,7 @@ test( 'killing zombies', function ( t ) {
   let finishCounter = 0
 
   function spawnChild ( ms ) {
-    const spawn = childProcess.spawn( 'node', [ 'mocks/spawn.js', ms ] )
+    const spawn = childProcess.spawn( 'node', [ 'test/mocks/spawn.js', ms ] )
 
     nz.add( spawn.pid )
 
