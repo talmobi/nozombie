@@ -10,11 +10,10 @@ simple pid collection and [tree-kill](https://www.npmjs.com/package/tree-kill) b
 ```javascript
 const nz = require( 'nozombie' )
 
-// child_process
 const spawn = childProcess.spawn( ... )
 nz.add( spawn.pid )
 
-...
+// ...
 
 nz.clean( [function ( err, results ) {} )
 ```
@@ -26,7 +25,7 @@ const child = browser.process()
 const pid = child.pid
 nz.add( pid )
 
-...
+// ...
 
 nz.clean( [function ( err, results ) {} )
 ```
