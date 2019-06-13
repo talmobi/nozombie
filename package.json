@@ -27,6 +27,7 @@
     "tree-kill": "~1.2.1"
   },
   "devDependencies": {
-    "tape": "~4.10.2"
+    "tape": "~4.10.2",
+    "usage": "~0.7.1"
   }
 }
