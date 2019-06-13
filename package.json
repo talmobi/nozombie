@@ -4,7 +4,7 @@
   "description": "tools to kill zombies",
   "main": "nozombie.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape test/index.js"
   },
   "keywords": [
     "nozombie"
