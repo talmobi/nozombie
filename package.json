@@ -13,8 +13,7 @@
     "nozombie"
   ],
   "author": "talmobi <talmo.christian@gmail.com>",
-  "license": "UNLICENSED",
-  "private": true,
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/talmobi/nozombie"
