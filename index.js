@@ -20,6 +20,12 @@ function nozombie () {
 
     parallelLimit( tasks, 3, function ( err, results ) {
       if ( done ) {
+
+        // clean pids list if everything went OK
+        if ( !err && results.length === tasks.length ) {
+          pids = []
+        }
+
         done( err, results )
       }
     } )
