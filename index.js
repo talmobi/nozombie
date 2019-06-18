@@ -2,16 +2,16 @@ const treeKill = require( 'tree-kill' )
 const parallelLimit = require( 'run-parallel-limit' )
 
 function nozombie () {
-  const api = {}
+  const _api = {}
 
   let _pids = []
 
-  api.push = api.add = function push ( pid ) {
-    pids.push( pid )
+  _api.push = _api.add = function push ( pid ) {
+    _pids.push( pid )
   }
 
-  api.kill = api.clean = function kill ( done ) {
-    const tasks = pids.map( function ( pid ) {
+  _api.kill = _api.clean = function kill ( done ) {
+    const tasks = _pids.map( function ( pid ) {
       return function ( callback ) {
         // kill -9
         treeKill( pid, 'SIGKILL', callback )
@@ -31,7 +31,7 @@ function nozombie () {
     } )
   }
 
-  return api
+  return _api
 }
 
 module.exports = nozombie
