@@ -15,7 +15,11 @@ nz.add( spawn.pid )
 
 // ...
 
+// kill and clear pids from list on success
 nz.clean( [function ( err, results ) {}] )
+
+// kill pids only
+nz.kill( [function ( err, results ) {}] )
 ```
 
 ### puppeteer
@@ -27,7 +31,11 @@ nz.add( pid )
 
 // ...
 
+// kill and clear pids from list on success
 nz.clean( [function ( err, results ) {}] )
+
+// kill pids only
+nz.kill( [function ( err, results ) {}] )
 ```
 
 ## About
