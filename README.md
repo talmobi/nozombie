@@ -42,6 +42,24 @@ nz.kill( [function ( err, results ) {}] )
 
 Collect and keep track of pid's and kill them off.
 
+## API
+```javascript
+// add pid to list
+nz.add( pid )
+
+// get (copy) of pids list
+var list = nz.list()
+
+// reset pids list manually
+nz.reset()
+
+// kill and clear pids list on success
+nz.clean( [function ( err, results ) {}] )
+
+// kill pids only ( does not reset pids list )
+nz.kill( [function ( err, results ) {}] )
+```
+
 ## Why
 
 To help keep track of pid's that need to be killed off and not leave running. And to reduce boilerplate for doing.
