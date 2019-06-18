@@ -4,6 +4,8 @@ const parallelLimit = require( 'run-parallel-limit' )
 function nozombie () {
   const _api = {}
 
+  _api.timeToLive = _api.ttl = timeToLive
+
   let _pids = []
 
   _api.push = _api.add = function push ( pid ) {
@@ -57,4 +59,12 @@ function nozombie () {
   return _api
 }
 
+// make sure pid is dead after some time
+function timeToLive ( pid, ms, callback ) {
+  setTimeout( function () {
+    treeKill( pid, 'SIGKILL', function ( err ) {
+      if ( callback ) callback( err )
+    } )
+  }, ms )
+}
 module.exports = nozombie
