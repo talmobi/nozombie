@@ -10,7 +10,23 @@ function nozombie () {
     _pids.push( pid )
   }
 
-  _api.kill = _api.clean = function kill ( done ) {
+  _api.kill = function kill ( done ) {
+    const tasks = _pids.map( function ( pid ) {
+      return function ( callback ) {
+        // kill -9
+        treeKill( pid, 'SIGKILL', callback )
+      }
+    } )
+
+    parallelLimit( tasks, 3, function ( err, results ) {
+      if ( done ) {
+        done( err, results )
+      }
+    } )
+  }
+
+  // kill and clean up pids list
+  _api.clean = function clean ( done ) {
     const tasks = _pids.map( function ( pid ) {
       return function ( callback ) {
         // kill -9
