@@ -44,7 +44,7 @@ test( 'killing zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.kill( function ( err, r ) {
         if ( err ) {
           t.err( err )
         }
@@ -100,7 +100,7 @@ test( 'no error rekilling dead zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.kill( function ( err, r ) {
         if ( err ) {
           t.err( err )
         }
@@ -111,7 +111,7 @@ test( 'no error rekilling dead zombies', function ( t ) {
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to kill the same processes again
-          nz.clean( function ( err, r ) {
+          nz.kill( function ( err, r ) {
             if ( err ) {
               t.err( err )
             }
@@ -198,7 +198,7 @@ test( 'no error killing non-existing processes', async function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.kill( function ( err, r ) {
         if ( err ) {
           t.err( err )
         }
@@ -210,7 +210,7 @@ test( 'no error killing non-existing processes', async function ( t ) {
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to kill the same processes again
-          nz.clean( function ( err, r ) {
+          nz.kill( function ( err, r ) {
             if ( err ) {
               t.err( err )
             }
