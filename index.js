@@ -4,7 +4,7 @@ const parallelLimit = require( 'run-parallel-limit' )
 function nozombie () {
   const api = {}
 
-  const pids = []
+  let _pids = []
 
   api.push = api.add = function push ( pid ) {
     pids.push( pid )
@@ -21,9 +21,9 @@ function nozombie () {
     parallelLimit( tasks, 3, function ( err, results ) {
       if ( done ) {
 
-        // clean pids list if everything went OK
+        // clean _pids list if everything went OK
         if ( !err && results.length === tasks.length ) {
-          pids = []
+          _pids = []
         }
 
         done( err, results )
