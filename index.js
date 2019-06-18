@@ -50,6 +50,10 @@ function nozombie () {
     return _pids.slice()
   }
 
+  _api.reset = function reset () {
+    return _pids = []
+  }
+
   return _api
 }
 
