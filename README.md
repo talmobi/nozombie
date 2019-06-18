@@ -15,7 +15,7 @@ nz.add( spawn.pid )
 
 // ...
 
-nz.clean( [function ( err, results ) {} )
+nz.clean( [function ( err, results ) {}] )
 ```
 
 ### puppeteer
@@ -27,7 +27,7 @@ nz.add( pid )
 
 // ...
 
-nz.clean( [function ( err, results ) {} )
+nz.clean( [function ( err, results ) {}] )
 ```
 
 ## About
