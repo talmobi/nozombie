@@ -6,6 +6,8 @@ function nozombie () {
 
   _api.timeToLive = _api.ttl = timeToLive
 
+  _api.highlander = highlander
+
   let _pids = []
 
   _api.push = _api.add = function push ( pid ) {
@@ -67,4 +69,16 @@ function timeToLive ( pid, ms, callback ) {
     } )
   }, ms )
 }
+
+const _highlanders = {}
+// make sure only one proccess with the given id/label/name
+// is running at a time
+function highlander ( pid, name, callback ) {
+  const previousPid = _highlanders[ name ]
+  _highlanders[ name ] = pid
+  treeKill( previousPid, 'SIGKILL', function ( err ) {
+    if ( callback ) callback( err )
+  } )
+}
+
 module.exports = nozombie
