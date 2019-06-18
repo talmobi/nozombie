@@ -46,6 +46,10 @@ function nozombie () {
     } )
   }
 
+  _api.list = function list () {
+    return _pids.slice()
+  }
+
   return _api
 }
 
