@@ -464,3 +464,44 @@ test( 'no error cleaning non-existing processes', async function ( t ) {
     }, 500 )
   } )
 } )
+
+test( 'test highlander', function ( t ) {
+  const nz = nozombie()
+
+  // spawns exited
+  let exitCounter = 0
+
+  // spawns who exited naturally at the end
+  let finishCounter = 0
+
+  function spawnChild ( ms ) {
+    const spawn = childProcess.spawn( 'node', [ 'test/mocks/spawn.js', ms ] )
+
+    nz.highlander( spawn.pid, 'clyde' )
+
+    spawn.stdout.on( 'data', function ( data ) {
+      str = String( data )
+
+      if ( str.indexOf( 'done' ) >= 0 ) {
+        finishCounter++
+      }
+    } )
+
+    spawn.on( 'exit', function () {
+      exitCounter++
+    } )
+  }
+
+  spawnChild( 100 )
+  spawnChild( 200 )
+  spawnChild( 300 )
+
+  process.nextTick( function () {
+    setTimeout( function () {
+      t.equal( finishCounter, 1, 'only last one should finish' )
+      t.equal( exitCounter, 3, 'all spawns exited OK!' )
+
+      t.end()
+    }, 500 )
+  } )
+} )
