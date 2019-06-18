@@ -19,13 +19,12 @@ function nozombie () {
     } )
 
     parallelLimit( tasks, 3, function ( err, results ) {
+      // clean _pids list if everything went OK
+      if ( !err && results.length === tasks.length ) {
+        _pids = []
+      }
+
       if ( done ) {
-
-        // clean _pids list if everything went OK
-        if ( !err && results.length === tasks.length ) {
-          _pids = []
-        }
-
         done( err, results )
       }
     } )
