@@ -505,3 +505,45 @@ test( 'test highlander', function ( t ) {
     }, 500 )
   } )
 } )
+
+test( 'test timeToLive', function ( t ) {
+  const nz = nozombie()
+
+  // spawns exited
+  let exitCounter = 0
+
+  // spawns who exited naturally at the end
+  let finishCounter = 0
+
+  function spawnChild ( ms ) {
+    const spawn = childProcess.spawn( 'node', [ 'test/mocks/spawn.js', ms ] )
+
+    nz.timeToLive( spawn.pid, 500 )
+
+    spawn.stdout.on( 'data', function ( data ) {
+      str = String( data )
+
+      if ( str.indexOf( 'done' ) >= 0 ) {
+        finishCounter++
+      }
+    } )
+
+    spawn.on( 'exit', function () {
+      exitCounter++
+    } )
+  }
+
+  spawnChild( 100 )
+  spawnChild( 300 )
+  spawnChild( 600 )
+  spawnChild( 900 )
+
+  process.nextTick( function () {
+    setTimeout( function () {
+      t.equal( finishCounter, 2, 'only first two should finish' )
+      t.equal( exitCounter, 4, 'all spawns exited OK!' )
+
+      t.end()
+    }, 1000 )
+  } )
+} )
