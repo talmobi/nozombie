@@ -1,6 +1,8 @@
 const treeKill = require( 'tree-kill' )
 const parallelLimit = require( 'run-parallel-limit' )
 
+// TODO add min ttl for added processes
+
 function nozombie () {
   const _api = {}
 
