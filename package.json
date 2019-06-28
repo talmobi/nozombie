@@ -23,6 +23,7 @@
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {
+    "ps-list": "~6.3.0",
     "run-parallel-limit": "~1.0.5",
     "tree-kill": "~1.2.1"
   },

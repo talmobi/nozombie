@@ -1,5 +1,6 @@
 const treeKill = require( 'tree-kill' )
 const parallelLimit = require( 'run-parallel-limit' )
+const psList = require( 'ps-list' )
 
 // TODO add min ttl for added processes
 
@@ -24,11 +25,76 @@ function nozombie () {
       }
     } )
 
-    parallelLimit( tasks, 3, function ( err, results ) {
-      if ( done ) {
-        done( err, results )
+    let attempts = 0
+    const MAX_ATTEMPTS = 3
+    const ATTEMPT_DELAY = 1000 // milliseconds
+
+    // kickstart work
+    work()
+
+    function work () {
+      if ( attempts++ > MAX_ATTEMPTS ) {
+        // too many attempts, fail
+        console.log( 'Error: too many kill attempts failed.' )
+
+        if ( done ) {
+          done( 'Error: too many kill attempts failed.' )
+        }
+
+        return undefined // stop attempting
       }
-    } )
+
+      parallelLimit( tasks, 3, function ( err, results ) {
+        if ( err ) {
+          // TODO attempt again
+          return setTimeout( work, ATTEMPT_DELAY )
+        }
+
+        if ( results ) {
+          // TODO verify that everything is dead
+          // attempt again if not OK
+
+          let ok = false
+
+          psList()
+          .then( function ( list ) {
+            // console.log( list )
+
+            // set ok to true naively
+            ok = true
+
+            // find an exception to ok and break early if found
+            top:
+            for ( let i = 0; i < list.length; i++ ) {
+              const item = list[ i ]
+
+              for ( let j = 0; j < _pids.length; j++ ) {
+                if ( item.pid === _pids[ j ] ) {
+                  ok = false
+                  break top // break out of loop early
+                }
+              }
+            }
+
+            next()
+          } )
+          .catch( function ( err ) {
+            ok = false
+            next()
+          } )
+
+          function next () {
+            if ( ok ) {
+              if ( done ) {
+                done( err, results )
+              }
+            } else {
+              return setTimeout( work, ATTEMPT_DELAY )
+            }
+          }
+        }
+      } )
+    }
   }
 
   // kill and clean up pids list
