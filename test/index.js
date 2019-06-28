@@ -5,6 +5,22 @@ const childProcess = require( 'child_process' )
 
 const usage = require( 'usage' )
 
+test( 'inside correct working directory', function ( t ) {
+  const fs = require( 'fs' )
+  const list = fs.readdirSync( '.' )
+
+  const map = {}
+  list.forEach( function ( file ) {
+    map[ file ] = file
+  } )
+
+  t.ok( map[ 'package.json' ], 'package.json exists' )
+  t.ok( map[ 'test' ], 'test directory exists' )
+  t.ok( map[ 'node_modules' ], 'node_modules exist' )
+  t.pass( 'most likely in correct directory!' )
+  t.end()
+} )
+
 test( 'killing zombies', function ( t ) {
   const nz = nozombie()
 
