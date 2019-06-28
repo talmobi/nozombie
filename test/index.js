@@ -62,7 +62,7 @@ test( 'killing zombies', function ( t ) {
     setTimeout( function () {
       nz.kill( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         t.equal( r.length, 9, 'result length OK!' )
@@ -118,7 +118,7 @@ test( 'no error rekilling dead zombies', function ( t ) {
     setTimeout( function () {
       nz.kill( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         t.equal( r.length, 9, 'result length OK!' )
@@ -129,7 +129,7 @@ test( 'no error rekilling dead zombies', function ( t ) {
           // attempt to kill the same processes again
           nz.kill( function ( err, r ) {
             if ( err ) {
-              t.err( err )
+              t.error( err )
             }
 
             t.equal( r.length, 9, 'result length OK!' )
@@ -216,7 +216,7 @@ test( 'no error killing non-existing processes', async function ( t ) {
     setTimeout( function () {
       nz.kill( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         // one extra result for the non-existing pid
@@ -228,7 +228,7 @@ test( 'no error killing non-existing processes', async function ( t ) {
           // attempt to kill the same processes again
           nz.kill( function ( err, r ) {
             if ( err ) {
-              t.err( err )
+              t.error( err )
             }
 
             // one extra result for the non-existing pid
@@ -287,7 +287,7 @@ test( 'cleaning zombies', function ( t ) {
     setTimeout( function () {
       nz.clean( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         t.equal( r.length, 9, 'result length OK!' )
@@ -343,7 +343,7 @@ test( 'no error cleaning dead zombies', function ( t ) {
     setTimeout( function () {
       nz.clean( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         t.equal( r.length, 9, 'result length OK!' )
@@ -354,7 +354,7 @@ test( 'no error cleaning dead zombies', function ( t ) {
           // attempt to clean the same processes again
           nz.clean( function ( err, r ) {
             if ( err ) {
-              t.err( err )
+              t.error( err )
             }
 
             // result is 0 now because the cleanup cleared
@@ -446,7 +446,7 @@ test( 'no error cleaning non-existing processes', async function ( t ) {
     setTimeout( function () {
       nz.clean( function ( err, r ) {
         if ( err ) {
-          t.err( err )
+          t.error( err )
         }
 
         // one extra result for the non-existing pid
@@ -458,7 +458,7 @@ test( 'no error cleaning non-existing processes', async function ( t ) {
           // attempt to clean the same processes again
           nz.clean( function ( err, r ) {
             if ( err ) {
-              t.err( err )
+              t.error( err )
             }
 
             // result is 0 now because the cleanup cleared
