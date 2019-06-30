@@ -2,6 +2,10 @@ const treeKill = require( 'tree-kill' )
 const parallelLimit = require( 'run-parallel-limit' )
 const psList = require( 'ps-list' )
 
+function debug () {
+  console.log.apply( this, arguments )
+}
+
 // TODO add min ttl for added processes
 
 function nozombie () {
@@ -33,9 +37,12 @@ function nozombie () {
     work()
 
     function work () {
+      debug( 'kill: working...' )
+      debug( 'tasks: ' + tasks )
+
       if ( attempts++ > MAX_ATTEMPTS ) {
         // too many attempts, fail
-        console.log( 'Error: too many kill attempts failed.' )
+        debug( 'Error: too many kill attempts failed.' )
 
         if ( done ) {
           done( 'Error: too many kill attempts failed.' )
@@ -46,9 +53,13 @@ function nozombie () {
 
       parallelLimit( tasks, 3, function ( err, results ) {
         if ( err ) {
+          debug( err )
           // TODO attempt again
           return setTimeout( work, ATTEMPT_DELAY )
         }
+
+        debug( 'results: ' + results )
+        debug( 'results boolean: ' + !!results )
 
         if ( results ) {
           // TODO verify that everything is dead
@@ -58,7 +69,7 @@ function nozombie () {
 
           psList()
           .then( function ( list ) {
-            // console.log( list )
+            // debug( list )
 
             // set ok to true naively
             ok = true
@@ -70,20 +81,28 @@ function nozombie () {
 
               for ( let j = 0; j < _pids.length; j++ ) {
                 if ( item.pid === _pids[ j ] ) {
+
+                  debug( 'pid still alive that should die: ' + item.pid )
+
                   ok = false
                   break top // break out of loop early
                 }
               }
             }
 
+            // debug( 'before next: ' + !!ok )
             next()
           } )
           .catch( function ( err ) {
+            // debug( 'before next error: ' + err )
+
             ok = false
             next()
           } )
 
           function next () {
+            // debug( 'inside next: ' + !!ok )
+
             if ( ok ) {
               if ( done ) {
                 done( err, results )
