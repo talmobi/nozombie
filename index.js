@@ -40,7 +40,7 @@ function nozombie () {
 
     function work () {
       debug( 'kill: working...' )
-      debug( 'tasks: ' + tasks )
+      // debug( 'tasks: ' + tasks )
 
       if ( attempts++ > MAX_ATTEMPTS ) {
         // too many attempts, fail
