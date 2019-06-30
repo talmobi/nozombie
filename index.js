@@ -3,7 +3,9 @@ const parallelLimit = require( 'run-parallel-limit' )
 const psList = require( 'ps-list' )
 
 function debug () {
-  console.log.apply( this, arguments )
+  if ( !!process.env.DEBUG_NOZOMBIE ) {
+    console.log.apply( this, arguments )
+  }
 }
 
 // TODO add min ttl for added processes
