@@ -100,7 +100,7 @@ function nozombie () {
   // kill and clean up pids list
   _api.clean = function clean ( done ) {
     _api.kill( function ( err, results ) {
-      if ( !err && results.length === tasks.length ) {
+      if ( !err ) {
         _api.reset()
       }
 
