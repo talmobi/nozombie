@@ -99,15 +99,7 @@ function nozombie () {
 
   // kill and clean up pids list
   _api.clean = function clean ( done ) {
-    const tasks = _pids.map( function ( pid ) {
-      return function ( callback ) {
-        // kill -9
-        treeKill( pid, 'SIGKILL', callback )
-      }
-    } )
-
-    parallelLimit( tasks, 3, function ( err, results ) {
-      // clean _pids list if everything went OK
+    _api.kill( function ( err, results ) {
       if ( !err && results.length === tasks.length ) {
         _api.reset()
       }
