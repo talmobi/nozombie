@@ -24,6 +24,19 @@ function nozombie () {
   }
 
   _api.kill = function kill ( done ) {
+    _pids.forEach( function ( pid ) {
+      // works for most
+      try {
+        process.kill( pid )
+      } catch ( err ) {
+        if ( err.code === 'ESRCH' ) {
+          // no such process, ignore this is fine
+        } else {
+          console.log( 'nozombie: ' + err )
+        }
+      }
+    } )
+
     const tasks = _pids.map( function ( pid ) {
       return function ( callback ) {
         // kill -9
