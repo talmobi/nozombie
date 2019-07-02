@@ -46,7 +46,7 @@ function nozombie () {
 
     let attempts = 0
     const MAX_ATTEMPTS = 3
-    const ATTEMPT_DELAY = 2000 // milliseconds
+    const ATTEMPT_DELAY = 1250 // milliseconds
 
     // kickstart work
     work()
