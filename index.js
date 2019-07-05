@@ -8,10 +8,21 @@ function debug () {
   }
 }
 
+// track nozombie's internally and add a single exit handler for all of them
+var _nozombies = []
+
+process.on( 'exit', function () {
+  _nozombies.forEach( function ( nz ) {
+    nz.kill()
+  } )
+} )
+
 // TODO add min ttl for added processes
 
 function nozombie () {
   const _api = {}
+
+  _nozombies.push( _api )
 
   _api.timeToLive = _api.ttl = timeToLive
 
