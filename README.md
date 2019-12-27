@@ -8,7 +8,7 @@ simple pid collection and [tree-kill](https://www.npmjs.com/package/tree-kill) b
 
 #### child_process
 ```javascript
-const nz = require( 'nozombie' )
+const nz = require( 'nozombie' )()
 
 const spawn = childProcess.spawn( ... )
 nz.add( spawn.pid )
