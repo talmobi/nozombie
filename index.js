@@ -287,6 +287,27 @@ function nozombie ( options ) {
   }
 
   _api.reset = function reset () {
+    for ( let i = 0; i < _pids.length; i++ ) {
+      const pid = _pids[ i ]
+      const ttl = _ttls[ pid ]
+
+      if ( !ttl ) break // no need to clear ttl
+
+      let keep = false
+      for ( let i = 0; i < _nozombies.length; i++ ) {
+        const nz = _nozombies[ i ]
+        if ( _api === nz ) continue // skip self
+
+        if ( nz.hasPid( pid ) ) keep = true
+      }
+
+      if ( !keep && ttl ) {
+        // clear ttl as it has been removed from tracking
+        clearTimeout( ttl.timeout )
+        delete _ttls[ pid ]
+      }
+    }
+
     return _pids = []
   }
 
