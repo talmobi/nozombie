@@ -286,6 +286,9 @@ function nozombie ( opts ) {
     // processes that have been given the same pid (as they are
     // semi-randomly allocated by the OS)
     var i = _pids.indexOf( pid )
+    debug( 'pid: ' + pid )
+    debug( _pids )
+    debug( 'i: ' + i )
     if ( i >= 0 ) {
       _pids.splice( i, 1 )
     }
