@@ -9,7 +9,7 @@ function debug () {
 }
 
 // track nozombie's internally and add a single exit handler for all of them
-var _nozombies = []
+const _nozombies = []
 
 process.on( 'exit', function () {
   clearTimeout( _tick_timeout )
