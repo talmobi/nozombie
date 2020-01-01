@@ -11,6 +11,9 @@ function debug () {
 // track nozombie's internally and add a single exit handler for all of them
 const _nozombies = []
 
+// track ttl timers internally
+const _ttls = {}
+
 process.on( 'exit', function () {
   clearTimeout( _tick_timeout )
   _nozombies.forEach( function ( nz ) {
@@ -112,6 +115,13 @@ function nozombie ( opts ) {
 
   _api.kill = function kill ( done ) {
     _pids.forEach( function ( pid ) {
+      // clear ttl timers dependant on this pid
+      const ttl = _ttls[ pid ]
+      if ( ttl ) {
+        clearTimeout( ttl.timeout )
+        delete _ttls[ pid ]
+      }
+
       // works for most
       try {
         process.kill( pid )
@@ -268,11 +278,20 @@ function nozombie ( opts ) {
 
 // make sure pid is dead after some time
 function timeToLive ( pid, ms, callback ) {
-  setTimeout( function () {
+  const timeout = setTimeout( function () {
+    delete _ttls[ pid ]
+
     treeKill( pid, 'SIGKILL', function ( err ) {
       if ( callback ) callback( err )
     } )
   }, ms )
+
+  _ttls[ pid ] = {
+    time: Date.now(),
+    pid: pid
+    timeout: timeout,
+    ms: ms,
+  }
 }
 
 const _highlanders = {}
