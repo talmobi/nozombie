@@ -279,6 +279,8 @@ function nozombie ( opts ) {
   }
 
   _api._forget = function _forget ( pid ) {
+    pid = Number( pid ) // normalize pid
+
     // remove pid's that aren't running anymore
     // this will help prevent accidentally killing future
     // processes that have been given the same pid (as they are
