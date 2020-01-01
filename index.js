@@ -35,6 +35,16 @@ function nozombie () {
       if ( pid.pid ) pid = pid.pid
     }
 
+    pid = Number( pid )
+    if ( pid === NaN ) {
+      debug( 'pid was NaN' )
+      throw new Error( 'nozombie: NaN pid given error' )
+    }
+    if ( typeof pid !== 'number' ) {
+      debug( 'pid was not typeof \'number\'' )
+      throw new Error( 'nozombie: typeof pid !== \'number\' error' )
+    }
+
     _pids.push( pid )
   }
 
