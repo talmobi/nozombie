@@ -27,7 +27,11 @@ nz.kill( [function ( err, results ) {}] )
 const browser = await puppeteer.launch( opts )
 const child = browser.process()
 const pid = child.pid
-nz.add( pid )
+
+// optional minimum time to live until killed by force
+const ttl = 1000 * 60 * 5 // 5 min
+
+nz.add( pid, ttl )
 
 // ...
 
@@ -46,6 +50,9 @@ Collect and keep track of pid's and kill them off.
 ```javascript
 // add pid to list
 nz.add( pid )
+
+// optional maximum ttl ( milliseconds ) before killed
+nz.add( pid, ttl )
 
 // get (copy) of pids list
 var list = nz.list()
