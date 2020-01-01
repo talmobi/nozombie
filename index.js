@@ -287,10 +287,10 @@ function timeToLive ( pid, ms, callback ) {
   }, ms )
 
   _ttls[ pid ] = {
-    time: Date.now(),
-    pid: pid
+    pid: pid,
     timeout: timeout,
     ms: ms,
+    time: Date.now()
   }
 }
 
