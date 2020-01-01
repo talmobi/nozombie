@@ -86,10 +86,14 @@ function _clearExitedPidsFromList ( list ) {
   } )
 }
 
-function nozombie ( opts ) {
+function nozombie ( options ) {
   const _api = {}
 
-  // TODO add opts min_life
+  if ( typeof options !== 'object' ) {
+    throw new Error( 'nozombie: options has to be an object' )
+  }
+
+  options = options || {}
 
   _nozombies.push( _api )
 
@@ -99,7 +103,7 @@ function nozombie ( opts ) {
 
   let _pids = []
 
-  _api.push = _api.add = function push ( pid ) {
+  _api.push = _api.add = function push ( pid, ttl ) {
     if ( typeof pid === 'object' ) {
       if ( pid.pid ) pid = pid.pid
     }
@@ -123,6 +127,14 @@ function nozombie ( opts ) {
     }
 
     _pids.push( pid )
+
+    if ( !ttl ) {
+      ttl = options.ttl
+    }
+
+    if ( ttl ) {
+      timeToLive( pid, ttl )
+    }
   }
 
   _api.kill = function kill ( done ) {
