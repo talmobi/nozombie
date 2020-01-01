@@ -563,3 +563,49 @@ test( 'test timeToLive', function ( t ) {
     }, 1000 )
   } )
 } )
+
+test( 'test period tick and ttl clearing when process exists early', function ( t ) {
+  const nz = nozombie()
+
+  // spawns exited
+  let exitCounter = 0
+
+  // spawns who exited naturally at the end
+  let finishCounter = 0
+
+  const spawns = []
+
+  function spawnChild ( ms ) {
+    const spawn = childProcess.spawn( 'node', [ 'test/mocks/spawn.js', ms ] )
+
+    nz.add( spawn )
+    nz.timeToLive( spawn.pid, 30 * 1000 )
+
+    spawn.stdout.on( 'data', function ( data ) {
+      str = String( data )
+
+      if ( str.indexOf( 'done' ) >= 0 ) {
+        finishCounter++
+        nz.kill()
+      }
+    } )
+
+    spawn.on( 'exit', function () {
+      exitCounter++
+    } )
+  }
+
+  spawnChild( 100 )
+  spawnChild( 5000 )
+  spawnChild( 5000 )
+  spawnChild( 5000 )
+
+  process.nextTick( function () {
+    setTimeout( function () {
+      t.equal( finishCounter, 1, 'only first two should finish' )
+      t.equal( exitCounter, 4, 'all spawns exited OK!' )
+      t.equal( nz._size(), 0, 'nz tick and ttl\'s are cleared OK!' )
+      t.end()
+    }, 1000 )
+  } )
+} )
