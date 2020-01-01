@@ -27,6 +27,34 @@ let _tick_timeout = undefined
 // remove non-running pid's from pids lists over time
 function tick () {
   debug( 'ticking' )
+
+  psList()
+  .then( function ( list ) {
+    _clearExitedPidsFromList( list )
+    next()
+  } )
+  .catch( function ( err ) {
+    debug( 'tick psList error: ' + err )
+    next()
+  } )
+
+  function next () {
+    clearTimeout( _tick_timeout )
+    _tick_timeout = undefined
+
+    let size = 0
+    _nozombies.forEach( function ( nz ) {
+      size += nz._size()
+    } )
+
+    if ( size > 0 ) {
+      _tick_timeout = setTimeout( tick, TICK_INTERVAL )
+    }
+  }
+}
+
+// clear exited pids from list
+function _clearExitedPidsFromList ( list ) {
   const map = {} // map of pids
 
   _nozombies.forEach( function ( nz ) {
@@ -37,43 +65,25 @@ function tick () {
 
   const keep = {}
 
-  psList()
-  .then( function ( list ) {
-    for ( let i = 0; i < list.length; i++ ) {
-      const item = list[ i ]
-      const pid = item.pid
-      keep[ pid ] = true
-    }
-
-    next()
-  } )
-  .catch( function ( err ) {
-    debug( 'tick psList error: ' + err )
-    next()
-  } )
-
-  function next () {
-    const pids = Object.keys( map )
-
-    pids.forEach( function ( pid ) {
-      if ( keep[ pid ] ) {
-        // do nothing, keep it in
-      } else {
-        // process does not exist anymore -> stop tracking it
-        // (remove from list)
-        _nozombies.forEach( function ( nz ) {
-          nz._forget( pid )
-        } )
-      }
-    } )
-
-    clearTimeout( _tick_timeout )
-    _tick_timeout = undefined
-
-    if ( pids.length > 0 ) {
-      _tick_timeout = setTimeout( tick, TICK_INTERVAL )
-    }
+  for ( let i = 0; i < list.length; i++ ) {
+    const item = list[ i ]
+    const pid = item.pid
+    keep[ pid ] = true
   }
+
+  const pids = Object.keys( map )
+  pids.forEach( function ( pid ) {
+    if ( keep[ pid ] ) {
+      // do nothing, keep it in
+    } else {
+      // process does not exist anymore -> stop tracking it
+      // (remove from list)
+      debug( 'nozombies.length: ' + _nozombies.length )
+      _nozombies.forEach( function ( nz ) {
+        nz._forget( pid )
+      } )
+    }
+  } )
 }
 
 function nozombie ( opts ) {
@@ -90,24 +100,26 @@ function nozombie ( opts ) {
   let _pids = []
 
   _api.push = _api.add = function push ( pid ) {
-    // start ticking
-    if ( _tick_timeout === undefined ) {
-      clearTimeout( _tick_timeout )
-      _tick_timeout = setTimeout( tick, TICK_INTERVAL )
-    }
-
     if ( typeof pid === 'object' ) {
       if ( pid.pid ) pid = pid.pid
     }
 
-    pid = Number( pid )
+    pid = Number( pid ) // normalize pid
+
     if ( pid === NaN ) {
       debug( 'pid was NaN' )
       throw new Error( 'nozombie: NaN pid given error' )
     }
+
     if ( typeof pid !== 'number' ) {
       debug( 'pid was not typeof \'number\'' )
       throw new Error( 'nozombie: typeof pid !== \'number\' error' )
+    }
+
+    // start ticking
+    if ( _tick_timeout === undefined ) {
+      clearTimeout( _tick_timeout )
+      _tick_timeout = setTimeout( tick, TICK_INTERVAL )
     }
 
     _pids.push( pid )
@@ -179,8 +191,11 @@ function nozombie ( opts ) {
 
           let ok = false
 
+          let _recentList = undefined
+
           psList()
           .then( function ( list ) {
+            _recentList = list // used to clear exited pids later
             // debug( list )
 
             // set ok to true naively
@@ -215,13 +230,18 @@ function nozombie ( opts ) {
           function next () {
             // debug( 'inside next: ' + !!ok )
 
+            // clear exited pids from lists
+            _clearExitedPidsFromList( _recentList )
+
+            let size = 0
             for ( let i = 0; i < _nozombies.length; i++ ) {
               const nz = _nozombies[ i ]
-              if ( nz._size ) {
-                clearTimeout( _tick_timeout )
-                _tick_timeout = undefined
-                break
-              }
+              size += nz._size()
+            }
+
+            if ( size === 0 ) {
+              clearTimeout( _tick_timeout )
+              _tick_timeout = undefined
             }
 
             if ( ok ) {
