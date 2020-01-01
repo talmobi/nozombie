@@ -31,6 +31,10 @@ function nozombie () {
   let _pids = []
 
   _api.push = _api.add = function push ( pid ) {
+    if ( typeof pid === 'object' ) {
+      if ( pid.pid ) pid = pid.pid
+    }
+
     _pids.push( pid )
   }
 
