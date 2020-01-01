@@ -89,11 +89,11 @@ function _clearExitedPidsFromList ( list ) {
 function nozombie ( options ) {
   const _api = {}
 
+  options = options || {}
+
   if ( typeof options !== 'object' ) {
     throw new Error( 'nozombie: options has to be an object' )
   }
-
-  options = options || {}
 
   _nozombies.push( _api )
 
