@@ -306,6 +306,12 @@ function nozombie ( options ) {
     }
   }
 
+  _api.hasPid = function hasPid ( pid ) {
+    pid = Number( pid ) // normalize pid
+    var i = _pids.indexOf( pid )
+    return ( i >= 0 )
+  }
+
   _api._size = function _size () {
     return _pids.length
   }
