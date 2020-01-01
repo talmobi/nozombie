@@ -76,6 +76,8 @@ function tick () {
 function nozombie ( opts ) {
   const _api = {}
 
+  // TODO add opts min_life
+
   _nozombies.push( _api )
 
   _api.timeToLive = _api.ttl = timeToLive
