@@ -132,7 +132,8 @@ test( 'no error rekilling dead zombies', function ( t ) {
               t.error( err )
             }
 
-            t.equal( r.length, 9, 'result length OK!' )
+            // result length 0 as all pids were killed last call
+            t.equal( r.length, 0, 'result length OK!' )
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
             t.equal( exitCounter, 9, 'all spawns exited OK!' )
@@ -231,8 +232,8 @@ test( 'no error killing non-existing processes', async function ( t ) {
               t.error( err )
             }
 
-            // one extra result for the non-existing pid
-            t.equal( r.length, 10, 'result length OK!' )
+            // result length 0 as all pids were killed last call
+            t.equal( r.length, 0, 'result length OK!' )
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
             t.equal( exitCounter, 9, 'all spawns exited OK!' )
