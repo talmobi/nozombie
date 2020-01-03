@@ -116,7 +116,9 @@ function nozombie ( options ) {
       return // ignore
     }
 
+    debug( 'before: ', pid )
     pid = Number( pid ) // normalize pid
+    debug( 'after: ', pid )
 
     if ( pid === NaN ) {
       debug( 'pid was NaN' )
@@ -156,6 +158,7 @@ function nozombie ( options ) {
 
       // works for most
       try {
+        debug( 'pid: ', pid )
         process.kill( pid )
       } catch ( err ) {
         if ( err.code === 'ESRCH' ) {
