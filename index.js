@@ -120,7 +120,7 @@ function nozombie ( options ) {
     pid = Number( pid ) // normalize pid
     debug( 'after: ', pid )
 
-    if ( pid === NaN ) {
+    if ( Number.isNaN( pid ) ) {
       debug( 'pid was NaN' )
       throw new Error( 'nozombie: NaN pid given error' )
     }
