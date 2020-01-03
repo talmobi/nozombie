@@ -104,8 +104,16 @@ function nozombie ( options ) {
   let _pids = []
 
   _api.push = _api.add = function push ( pid, ttl ) {
-    if ( typeof pid === 'object' ) {
-      if ( pid.pid ) pid = pid.pid
+    while ( typeof pid === 'object' ) {
+      pid = pid.pid
+    }
+
+    if ( !pid ) {
+      /* most likely spawned process ( spawn.pid ) supplied
+       * that was undefined due to the spawned process failing
+       * to run ( ex. wrong command/argument variables )
+       */
+      return // ignore
     }
 
     pid = Number( pid ) // normalize pid
