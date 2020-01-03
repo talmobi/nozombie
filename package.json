@@ -1,6 +1,6 @@
 {
   "name": "nozombie",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "tools to kill zombies",
   "main": "index.js",
   "files": [
