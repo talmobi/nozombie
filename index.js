@@ -172,14 +172,16 @@ function nozombie ( options ) {
     } )
 
     let attempts = 0
-    const MAX_ATTEMPTS = 3
-    const ATTEMPT_DELAY = 1250 // milliseconds
+    const MAX_ATTEMPTS = 5
+    const ATTEMPTS_DELAYS = [
+      200, 300, 750, 2000, 2000, 2000, 2000
+    ]
 
     // kickstart work
     work()
 
     function work () {
-      debug( 'kill: working...' )
+      debug( 'kill: working, attempt: ' + attempts )
       // debug( 'tasks: ' + tasks )
 
       if ( attempts++ > MAX_ATTEMPTS ) {
@@ -262,13 +264,24 @@ function nozombie ( options ) {
               _tick_timeout = undefined
             }
 
-            if ( ok ) {
-              if ( done ) {
-                done( err, results )
+          if ( allDead ) {
+            done && done( err, results )
+          } else {
+            // try to kill everything again
+            let n = (
+              ATTEMPTS_DELAYS[ attempts ] ||
+              ATTEMPTS_DELAYS[ ATTEMPTS_DELAYS.length - 1 ]
+            )
+
+            // update tasks list for next work cycle
+            tasks = _pids.map( function ( pid ) {
+              return function ( callback ) {
+                // kill -9, use SIGKILL instead now
+                treeKill( pid, 'SIGKILL', callback )
               }
-            } else {
-              return setTimeout( work, ATTEMPT_DELAY )
-            }
+            } )
+
+            return setTimeout( work, n )
           }
         }
       } )
