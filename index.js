@@ -83,6 +83,13 @@ function _clearExitedPidsFromList ( list ) {
       debug( 'nozombies.length: ' + _nozombies.length )
       _nozombies.forEach( function ( nz ) {
         nz._forget( pid )
+
+        // clear associated ttl's for this pid
+        const ttl = _ttls[ pid ]
+        if ( ttl ) {
+          clearTimeout( ttl.timeout )
+          delete _ttls[ pid ]
+        }
       } )
     }
   } )
@@ -150,28 +157,7 @@ function nozombie ( options ) {
   }
 
   _api.kill = function kill ( done ) {
-    _pids.forEach( function ( pid ) {
-      // clear ttl timers dependant on this pid
-      const ttl = _ttls[ pid ]
-      if ( ttl ) {
-        clearTimeout( ttl.timeout )
-        delete _ttls[ pid ]
-      }
-
-      // works for most
-      try {
-        debug( 'pid: ', pid )
-        process.kill( pid )
-      } catch ( err ) {
-        if ( err.code === 'ESRCH' ) {
-          // no such process, ignore this is fine
-        } else {
-          console.log( 'nozombie: ' + err )
-        }
-      }
-    } )
-
-    const tasks = _pids.map( function ( pid ) {
+    let tasks = _pids.map( function ( pid ) {
       return function ( callback ) {
         // kill -9
         treeKill( pid, 'SIGKILL', callback )
