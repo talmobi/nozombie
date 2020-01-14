@@ -163,145 +163,164 @@ function nozombie ( options ) {
   }
 
   _api.kill = function kill ( done ) {
-    let tasks = _pids.map( function ( pid ) {
-      return function ( callback ) {
-        // SIGTERM first
-        // switch to SIGKILL if first attempt fails
-        treeKill( pid, 'SIGTERM', callback )
-      }
-    } )
-
-    let attempts = 0
-    const MAX_ATTEMPTS = 5
-    const ATTEMPTS_DELAYS = [
-      200, 300, 750, 2000, 2000, 2000, 2000
-    ]
-
-    // list of pids killed
-    let killedPids = []
-
-    // kickstart work
-    work()
-
-    function work () {
-      debug( 'kill: working, attempt: ' + attempts )
-      // debug( 'tasks: ' + tasks )
-
-      if ( attempts++ > MAX_ATTEMPTS ) {
-        // too many attempts, fail
-        debug( 'Error: too many kill attempts failed.' )
-
-        if ( done ) {
-          done( 'Error: too many kill attempts failed.' )
-        }
-
-        return undefined // stop attempting
-      }
-
-      parallelLimit( tasks, 3, function ( err, results ) {
-        if ( err ) {
-          debug( err )
-        }
-
-        // verify that everything is dead
-        // attempt again if not OK
-        let allDead = false
-
-        let _recentList = undefined
-
-        psList()
-        .then( function ( list ) {
-          _recentList = list // used to clear exited pids later
-          // debug( list )
-
-          const wasAlive = {}
-          for ( let i = 0; i < _pids.length; i++ ) {
-            const pid = _pids[ i ]
-            wasAlive[ pid ] = true
-          }
-
-          // mutates _pids
-          _clearExitedPidsFromList( _recentList )
-
-          const isAlive = {}
-          for ( let i = 0; i < _pids.length; i++ ) {
-            const pid = _pids[ i ]
-            isAlive[ pid ] = true
-          }
-
-          // keep track of what pid's were killedPids
-          Object.keys( wasAlive ).forEach( function ( pid ) {
-            if ( !isAlive[ pid ] ) killedPids.push( pid )
-          } )
-
-          // set ok to true naively
-          allDead = ( _pids.length === 0 )
-
-          _pids.forEach( function ( pid ) {
-            debug( 'pid still alive that should die: ' + item.pid )
-          } )
-
-          next()
-        } )
-        .catch( function ( err ) {
-          // debug( 'before next error: ' + err )
-
-          allDead = false
-          next()
-        } )
-
-        function next () {
-          // size of all pids pids across all nozombie instances
-          let size = 0
-          for ( let i = 0; i < _nozombies.length; i++ ) {
-            const nz = _nozombies[ i ]
-            size += nz._size()
-          }
-
-          debug( 'all pids size: ' + size )
-
-          // clear internal tick timeout if no pids
-          // are active on any instance
-          if ( size === 0 ) {
-            clearTimeout( _tick_timeout )
-            _tick_timeout = undefined
-          }
-
-          if ( allDead ) {
-            done && done( err, killedPids )
-          } else {
-            // try to kill everything again
-            let n = (
-              ATTEMPTS_DELAYS[ attempts ] ||
-              ATTEMPTS_DELAYS[ ATTEMPTS_DELAYS.length - 1 ]
-            )
-
-            // update tasks list for next work cycle
-            tasks = _pids.map( function ( pid ) {
-              return function ( callback ) {
-                // kill -9, use SIGKILL instead now
-                treeKill( pid, 'SIGKILL', callback )
-              }
-            } )
-
-            return setTimeout( work, n )
-          }
+    _api.clean( startKilling )
+    function startKilling () {
+      let tasks = _pids.map( function ( pid ) {
+        return function ( callback ) {
+          // SIGTERM first
+          // switch to SIGKILL if first attempt fails
+          treeKill( pid, 'SIGTERM', callback )
         }
       } )
+
+      let attempts = 0
+      const MAX_ATTEMPTS = 5
+      const ATTEMPTS_DELAYS = [
+        200, 300, 750, 2000, 2000, 2000, 2000
+      ]
+
+      // list of pids killed
+      let killedPids = []
+
+      // kickstart work
+      work()
+
+      function work () {
+        debug( 'kill: working, attempt: ' + attempts )
+        // debug( 'tasks: ' + tasks )
+
+        if ( attempts++ > MAX_ATTEMPTS ) {
+          // too many attempts, fail
+          debug( 'Error: too many kill attempts failed.' )
+
+          if ( done ) {
+            done( 'Error: too many kill attempts failed.' )
+          }
+
+          return undefined // stop attempting
+        }
+
+        parallelLimit( tasks, 3, function ( err, results ) {
+          if ( err ) {
+            debug( err )
+          }
+
+          // verify that everything is dead
+          // attempt again if not OK
+          let allDead = false
+
+          let _recentList = undefined
+
+          psList()
+          .then( function ( list ) {
+            _recentList = list // used to clear exited pids later
+            // debug( list )
+
+            const wasAlive = {}
+            for ( let i = 0; i < _pids.length; i++ ) {
+              const pid = _pids[ i ]
+              wasAlive[ pid ] = true
+            }
+
+            // mutates _pids
+            _clearExitedPidsFromList( _recentList )
+
+            const isAlive = {}
+            for ( let i = 0; i < _pids.length; i++ ) {
+              const pid = _pids[ i ]
+              isAlive[ pid ] = true
+            }
+
+            // keep track of what pid's were killedPids
+            Object.keys( wasAlive ).forEach( function ( pid ) {
+              if ( !isAlive[ pid ] ) killedPids.push( pid )
+            } )
+
+            // set ok to true naively
+            allDead = ( _pids.length === 0 )
+
+            _pids.forEach( function ( pid ) {
+              debug( 'pid still alive that should die: ' + item.pid )
+            } )
+
+            next()
+          } )
+          .catch( function ( err ) {
+            // debug( 'before next error: ' + err )
+
+            allDead = false
+            next()
+          } )
+
+          function next () {
+            // size of all pids pids across all nozombie instances
+            let size = 0
+            for ( let i = 0; i < _nozombies.length; i++ ) {
+              const nz = _nozombies[ i ]
+              size += nz._size()
+            }
+
+            debug( 'all pids size: ' + size )
+
+            // clear internal tick timeout if no pids
+            // are active on any instance
+            if ( size === 0 ) {
+              clearTimeout( _tick_timeout )
+              _tick_timeout = undefined
+            }
+
+            if ( allDead ) {
+              done && done( err, killedPids )
+            } else {
+              // try to kill everything again
+              let n = (
+                ATTEMPTS_DELAYS[ attempts ] ||
+                ATTEMPTS_DELAYS[ ATTEMPTS_DELAYS.length - 1 ]
+              )
+
+              // update tasks list for next work cycle
+              tasks = _pids.map( function ( pid ) {
+                return function ( callback ) {
+                  // kill -9, use SIGKILL instead now
+                  treeKill( pid, 'SIGKILL', callback )
+                }
+              } )
+
+              return setTimeout( work, n )
+            }
+          }
+        } )
+      }
     }
   }
 
-  // kill and clean up pids list
+  // clean pids list of non-existing processes
   _api.clean = function clean ( done ) {
-    _api.kill( function ( err, results ) {
-      if ( !err ) {
-        _api.reset()
+    psList()
+    .then( function ( list ) {
+      _clearExitedPidsFromList( list )
+      next()
+    } )
+    .catch( function ( err ) {
+      debug( 'tick psList error: ' + err )
+      next()
+    } )
+
+    function next () {
+      clearTimeout( _tick_timeout )
+      _tick_timeout = undefined
+
+      let size = 0
+      _nozombies.forEach( function ( nz ) {
+        size += nz._size()
+      } )
+
+      if ( size > 0 ) {
+        _tick_timeout = setTimeout( tick, TICK_INTERVAL )
       }
 
-      if ( done ) {
-        done( err, results )
-      }
-    } )
+      done && done()
+    }
   }
 
   _api.list = function list () {
@@ -330,7 +349,21 @@ function nozombie ( options ) {
       }
     }
 
-    return _pids = []
+    _pids = []
+
+    clearTimeout( _tick_timeout )
+    _tick_timeout = undefined
+
+    let size = 0
+    _nozombies.forEach( function ( nz ) {
+      size += nz._size()
+    } )
+
+    if ( size > 0 ) {
+      _tick_timeout = setTimeout( tick, TICK_INTERVAL )
+    }
+
+    return _pids
   }
 
   _api._forget = function _forget ( pid ) {
