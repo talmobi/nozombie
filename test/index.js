@@ -658,6 +658,8 @@ test( 'test period tick and ttl clearing when process exists early', function ( 
 
       if ( str.indexOf( 'done' ) >= 0 ) {
         finishCounter++
+
+        // kill them all after first one is done.
         nz.kill()
       }
     } )
