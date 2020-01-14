@@ -198,71 +198,53 @@ function nozombie ( options ) {
       parallelLimit( tasks, 3, function ( err, results ) {
         if ( err ) {
           debug( err )
-          // TODO attempt again
-          return setTimeout( work, ATTEMPT_DELAY )
         }
 
-        debug( 'results: ' + results )
-        debug( 'results boolean: ' + !!results )
+        // verify that everything is dead
+        // attempt again if not OK
+        let allDead = false
 
-        if ( results ) {
-          // TODO verify that everything is dead
-          // attempt again if not OK
+        let _recentList = undefined
 
-          let ok = false
+        psList()
+        .then( function ( list ) {
+          _recentList = list // used to clear exited pids later
+          // debug( list )
 
-          let _recentList = undefined
+          _clearExitedPidsFromList( _recentList )
 
-          psList()
-          .then( function ( list ) {
-            _recentList = list // used to clear exited pids later
-            // debug( list )
+          // set ok to true naively
+          allDead = ( _pids.length === 0 )
 
-            // set ok to true naively
-            ok = true
-
-            // find an exception to ok and break early if found
-            top:
-            for ( let i = 0; i < list.length; i++ ) {
-              const item = list[ i ]
-
-              for ( let j = 0; j < _pids.length; j++ ) {
-                if ( item.pid === _pids[ j ] ) {
-
-                  debug( 'pid still alive that should die: ' + item.pid )
-
-                  ok = false
-                  break top // break out of loop early
-                }
-              }
-            }
-
-            // debug( 'before next: ' + !!ok )
-            next()
-          } )
-          .catch( function ( err ) {
-            // debug( 'before next error: ' + err )
-
-            ok = false
-            next()
+          _pids.forEach( function ( pid ) {
+            debug( 'pid still alive that should die: ' + item.pid )
           } )
 
-          function next () {
-            // debug( 'inside next: ' + !!ok )
+          next()
+        } )
+        .catch( function ( err ) {
+          // debug( 'before next error: ' + err )
 
-            // clear exited pids from lists
-            _clearExitedPidsFromList( _recentList )
+          allDead = false
+          next()
+        } )
 
-            let size = 0
-            for ( let i = 0; i < _nozombies.length; i++ ) {
-              const nz = _nozombies[ i ]
-              size += nz._size()
-            }
+        function next () {
+          // size of all pids pids across all nozombie instances
+          let size = 0
+          for ( let i = 0; i < _nozombies.length; i++ ) {
+            const nz = _nozombies[ i ]
+            size += nz._size()
+          }
 
-            if ( size === 0 ) {
-              clearTimeout( _tick_timeout )
-              _tick_timeout = undefined
-            }
+          debug( 'all pids size: ' + size )
+
+          // clear internal tick timeout if no pids
+          // are active on any instance
+          if ( size === 0 ) {
+            clearTimeout( _tick_timeout )
+            _tick_timeout = undefined
+          }
 
           if ( allDead ) {
             done && done( err, results )
