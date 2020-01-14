@@ -165,8 +165,9 @@ function nozombie ( options ) {
   _api.kill = function kill ( done ) {
     let tasks = _pids.map( function ( pid ) {
       return function ( callback ) {
-        // kill -9
-        treeKill( pid, 'SIGKILL', callback )
+        // SIGTERM first
+        // switch to SIGKILL if first attempt fails
+        treeKill( pid, 'SIGTERM', callback )
       }
     } )
 
