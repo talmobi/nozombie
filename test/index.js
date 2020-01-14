@@ -147,6 +147,77 @@ test( 'no error rekilling dead zombies', function ( t ) {
   } )
 } )
 
+test( 'no error rekilling same pid', function ( t ) {
+  const nz = nozombie()
+
+  // spawns exited
+  let exitCounter = 0
+
+  // spawns who exited naturally at the end
+  let finishCounter = 0
+
+  function spawnChild ( ms ) {
+    const spawn = childProcess.spawn( 'node', [ 'test/mocks/spawn.js', ms ] )
+
+    nz.add( spawn.pid )
+    nz.add( spawn.pid )
+
+    spawn.stdout.on( 'data', function ( data ) {
+      str = String( data )
+
+      if ( str.indexOf( 'done' ) >= 0 ) {
+        finishCounter++
+      }
+    } )
+
+    spawn.on( 'exit', function () {
+      exitCounter++
+    } )
+  }
+
+  spawnChild( 100 )
+  spawnChild( 200 )
+  spawnChild( 300 )
+  spawnChild( 4000 )
+  spawnChild( 5000 )
+  spawnChild( 6000 )
+  spawnChild( 7000 )
+  spawnChild( 8000 )
+  spawnChild( 9000 )
+
+  process.nextTick( function () {
+    setTimeout( function () {
+      nz.kill( function ( err, r ) {
+        if ( err ) {
+          t.error( err )
+        }
+
+        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
+
+        setTimeout( function () {
+          t.equal( exitCounter, 9, 'all spawns exited OK!' )
+          // attempt to kill the same processes again
+          nz.kill( function ( err, r ) {
+            if ( err ) {
+              t.error( err )
+            }
+
+            // result length 0 as all pids were killed last call
+            t.equal( r.length, 0, 'result length OK!' )
+            t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
+
+            t.equal( exitCounter, 9, 'all spawns exited OK!' )
+
+            t.end()
+          } )
+
+        }, 500 )
+      } )
+    }, 500 )
+  } )
+} )
+
 test( 'no error killing non-existing processes', async function ( t ) {
   const nz = nozombie()
 
