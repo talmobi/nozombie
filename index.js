@@ -137,6 +137,14 @@ function nozombie ( options ) {
       throw new Error( 'nozombie: typeof pid !== \'number\' error' )
     }
 
+    // check that pid isn't already on the list
+    for ( let i = 0; i < _pids.length; i++ ) {
+      // ignore if already on the list
+      if ( pid === _pids[ i ] ) return
+    }
+
+    debug( 'pid added: ', pid )
+
     // start ticking
     if ( _tick_timeout === undefined ) {
       clearTimeout( _tick_timeout )
