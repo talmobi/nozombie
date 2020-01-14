@@ -125,9 +125,7 @@ function nozombie ( options ) {
       return // ignore
     }
 
-    debug( 'before: ', pid )
     pid = Number( pid ) // normalize pid
-    debug( 'after: ', pid )
 
     if ( Number.isNaN( pid ) ) {
       debug( 'pid was NaN' )
