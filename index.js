@@ -59,15 +59,17 @@ function _clearExitedPidsFromList ( list ) {
 
   _nozombies.forEach( function ( nz ) {
     nz.list().forEach( function ( pid ) {
-      map[ pid ] = pid
+      pid = String( pid ).trim()
+      map[ pid ] = true
     } )
   } )
 
   const keep = {}
 
+  // any pid not on the list doesn't exist anymore
   for ( let i = 0; i < list.length; i++ ) {
     const item = list[ i ]
-    const pid = item.pid
+    const pid = String( item.pid ).trim()
     keep[ pid ] = true
   }
 
