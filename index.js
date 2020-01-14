@@ -177,6 +177,9 @@ function nozombie ( options ) {
       200, 300, 750, 2000, 2000, 2000, 2000
     ]
 
+    // list of pids killed
+    let killedPids = []
+
     // kickstart work
     work()
 
@@ -211,8 +214,25 @@ function nozombie ( options ) {
           _recentList = list // used to clear exited pids later
           // debug( list )
 
+          const wasAlive = {}
+          for ( let i = 0; i < _pids.length; i++ ) {
+            const pid = _pids[ i ]
+            wasAlive[ pid ] = true
+          }
+
           // mutates _pids
           _clearExitedPidsFromList( _recentList )
+
+          const isAlive = {}
+          for ( let i = 0; i < _pids.length; i++ ) {
+            const pid = _pids[ i ]
+            isAlive[ pid ] = true
+          }
+
+          // keep track of what pid's were killedPids
+          Object.keys( wasAlive ).forEach( function ( pid ) {
+            if ( !isAlive[ pid ] ) killedPids.push( pid )
+          } )
 
           // set ok to true naively
           allDead = ( _pids.length === 0 )
@@ -248,7 +268,7 @@ function nozombie ( options ) {
           }
 
           if ( allDead ) {
-            done && done( err, results )
+            done && done( err, killedPids )
           } else {
             // try to kill everything again
             let n = (

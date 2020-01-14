@@ -60,12 +60,12 @@ test( 'killing zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.kill( function ( err, r ) {
+      nz.kill( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
-        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( killedPids.length, 9, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
@@ -116,24 +116,24 @@ test( 'no error rekilling dead zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.kill( function ( err, r ) {
+      nz.kill( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
-        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( killedPids.length, 9, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to kill the same processes again
-          nz.kill( function ( err, r ) {
+          nz.kill( function ( err, killedPids ) {
             if ( err ) {
               t.error( err )
             }
 
-            // result length 0 as all pids were killed last call
-            t.equal( r.length, 0, 'result length OK!' )
+            // killed length 0 as all pids were killed last call
+            t.equal( killedPids.length, 0, 'killed length OK!' )
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
             t.equal( exitCounter, 9, 'all spawns exited OK!' )
@@ -187,24 +187,24 @@ test( 'no error rekilling same pid', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.kill( function ( err, r ) {
+      nz.kill( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
-        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( killedPids.length, 9, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to kill the same processes again
-          nz.kill( function ( err, r ) {
+          nz.kill( function ( err, killedPids ) {
             if ( err ) {
               t.error( err )
             }
 
-            // result length 0 as all pids were killed last call
-            t.equal( r.length, 0, 'result length OK!' )
+            // killed length 0 as all pids were killed last call
+            t.equal( killedPids.length, 0, 'killed length OK!' )
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
             t.equal( exitCounter, 9, 'all spawns exited OK!' )
@@ -286,25 +286,25 @@ test( 'no error killing non-existing processes', async function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.kill( function ( err, r ) {
+      nz.kill( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
         // one extra result for the non-existing pid
-        t.equal( r.length, 10, 'result length OK!' )
+        t.equal( killedPids.length, 10, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to kill the same processes again
-          nz.kill( function ( err, r ) {
+          nz.kill( function ( err, killedPids ) {
             if ( err ) {
               t.error( err )
             }
 
-            // result length 0 as all pids were killed last call
-            t.equal( r.length, 0, 'result length OK!' )
+            // killed length 0 as all pids were killed last call
+            t.equal( killedPids.length, 0, 'killed length OK!' )
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
             t.equal( exitCounter, 9, 'all spawns exited OK!' )
@@ -357,12 +357,12 @@ test( 'cleaning zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.clean( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
-        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( killedPids.length, 9, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
@@ -413,25 +413,25 @@ test( 'no error cleaning dead zombies', function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.clean( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
-        t.equal( r.length, 9, 'result length OK!' )
+        t.equal( killedPids.length, 9, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to clean the same processes again
-          nz.clean( function ( err, r ) {
+          nz.clean( function ( err, killedPids ) {
             if ( err ) {
               t.error( err )
             }
 
             // result is 0 now because the cleanup cleared
             // the pids list
-            t.equal( r.length, 0, 'result length OK!' )
+            t.equal( killedPids.length, 0, 'killed length OK!' )
 
             // finish counter still the same
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
@@ -516,26 +516,26 @@ test( 'no error cleaning non-existing processes', async function ( t ) {
 
   process.nextTick( function () {
     setTimeout( function () {
-      nz.clean( function ( err, r ) {
+      nz.clean( function ( err, killedPids ) {
         if ( err ) {
           t.error( err )
         }
 
         // one extra result for the non-existing pid
-        t.equal( r.length, 10, 'result length OK!' )
+        t.equal( killedPids.length, 10, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
           t.equal( exitCounter, 9, 'all spawns exited OK!' )
           // attempt to clean the same processes again
-          nz.clean( function ( err, r ) {
+          nz.clean( function ( err, killedPids ) {
             if ( err ) {
               t.error( err )
             }
 
             // result is 0 now because the cleanup cleared
             // the pids list
-            t.equal( r.length, 0, 'result length OK!' )
+            t.equal( killedPids.length, 0, 'killed length OK!' )
 
             // finish counter still the same
             t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
