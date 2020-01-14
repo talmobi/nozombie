@@ -211,6 +211,7 @@ function nozombie ( options ) {
           _recentList = list // used to clear exited pids later
           // debug( list )
 
+          // mutates _pids
           _clearExitedPidsFromList( _recentList )
 
           // set ok to true naively
