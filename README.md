@@ -11,15 +11,15 @@ simple pid collection and [tree-kill](https://www.npmjs.com/package/tree-kill) b
 const nz = require( 'nozombie' )()
 
 const spawn = childProcess.spawn( ... )
-nz.add( spawn.pid )
+
+// optional minimum time to live until killed by force
+const ttl = 1000 * 60 * 5 // 5 min
+
+nz.add( spawn.pid, ttl )
 
 // ...
 
-// kill and clear pids from list on success
-nz.clean( [function ( err, results ) {}] )
-
-// kill pids only
-nz.kill( [function ( err, results ) {}] )
+nz.kill( [function ( err, list_of_pids_killed ) {}] )
 ```
 
 ### puppeteer
@@ -35,11 +35,7 @@ nz.add( pid, ttl )
 
 // ...
 
-// kill and clear pids from list on success
-nz.clean( [function ( err, results ) {}] )
-
-// kill pids only
-nz.kill( [function ( err, results ) {}] )
+nz.kill( [function ( err, list_of_pids_killed ) {}] )
 ```
 
 ## About
@@ -57,14 +53,8 @@ nz.add( pid, ttl )
 // get (copy) of pids list
 var list = nz.list()
 
-// reset pids list manually
-nz.reset()
-
-// kill and clear pids list on success
-nz.clean( [function ( err, results ) {}] )
-
-// kill pids only ( does not reset pids list )
-nz.kill( [function ( err, results ) {}] )
+// kill pids
+nz.kill( [function ( err, list_of_pids_killed ) {}] )
 ```
 
 ## Why
