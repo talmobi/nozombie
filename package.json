@@ -26,7 +26,7 @@
   "dependencies": {
     "ps-list": "~6.3.0",
     "run-parallel-limit": "~1.0.5",
-    "tree-kill": "~1.2.1"
+    "tree-kill": "~1.2.2"
   },
   "devDependencies": {
     "tape": "~4.10.2",
