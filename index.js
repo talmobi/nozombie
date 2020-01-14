@@ -320,10 +320,8 @@ function nozombie ( options ) {
     // processes that have been given the same pid (as they are
     // semi-randomly allocated by the OS)
     var i = _pids.indexOf( pid )
-    debug( 'pid: ' + pid )
-    debug( _pids )
-    debug( 'i: ' + i )
     if ( i >= 0 ) {
+      debug( '_forgetting: ' + pid )
       _pids.splice( i, 1 )
     }
   }
