@@ -303,7 +303,7 @@ function nozombie ( options ) {
     } )
     .catch( function ( err ) {
       debug( 'tick psList error: ' + err )
-      next()
+      done && done( err )
     } )
 
     function next () {
@@ -319,7 +319,7 @@ function nozombie ( options ) {
         _tick_timeout = setTimeout( tick, TICK_INTERVAL )
       }
 
-      done && done()
+      done && done( undefined, size )
     }
   }
 
