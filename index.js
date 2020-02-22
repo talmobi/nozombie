@@ -307,16 +307,18 @@ function nozombie ( options ) {
     } )
 
     function next () {
-      clearTimeout( _tick_timeout )
-      _tick_timeout = undefined
-
       let size = 0
       _nozombies.forEach( function ( nz ) {
         size += nz._size()
       } )
 
       if ( size > 0 ) {
-        _tick_timeout = setTimeout( tick, TICK_INTERVAL )
+        if ( _tick_timeout === undefined ) {
+          _tick_timeout = setTimeout( tick, TICK_INTERVAL )
+        }
+      } else {
+        clearTimeout( _tick_timeout )
+        _tick_timeout = undefined
       }
 
       done && done( undefined, size )
