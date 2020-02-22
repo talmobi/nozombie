@@ -65,7 +65,8 @@ test( 'killing zombies', function ( t ) {
           t.error( err )
         }
 
-        t.equal( killedPids.length, 9, 'killed length OK!' )
+        // only 6 processes left alive that can be killed
+        t.equal( killedPids.length, 6, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
@@ -121,7 +122,8 @@ test( 'no error rekilling dead zombies', function ( t ) {
           t.error( err )
         }
 
-        t.equal( killedPids.length, 9, 'killed length OK!' )
+        // only 6 processes left alive that can be killed
+        t.equal( killedPids.length, 6, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
@@ -192,7 +194,8 @@ test( 'no error rekilling same pid', function ( t ) {
           t.error( err )
         }
 
-        t.equal( killedPids.length, 9, 'killed length OK!' )
+        // only 6 processes left alive that can be killed
+        t.equal( killedPids.length, 6, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
@@ -291,8 +294,9 @@ test( 'no error killing non-existing processes', async function ( t ) {
           t.error( err )
         }
 
-        // one extra result for the non-existing pid
-        t.equal( killedPids.length, 10, 'killed length OK!' )
+        // one extra result that doesn't exist is ignored
+        // only 6 processes left alive that can be killed
+        t.equal( killedPids.length, 6, 'killed length OK!' )
         t.equal( finishCounter, 3, 'only first three spawns finished OK!' )
 
         setTimeout( function () {
