@@ -7,7 +7,7 @@ const path = require( 'path' )
 const childProcess = require( 'child_process' )
 
 function spawn ( name, ms, buffer ) {
-	const cmd = process.env._
+	const cmd = process.execPath
 	const args = [
 		path.join( __dirname, 'mocks/spawn-name.js' ),
 		name,

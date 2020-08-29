@@ -35,7 +35,7 @@ module.exports = function nozombie ( opts ) {
 	sendQueue.push( `// started by pid: ${ process.pid }, date: ${ Date.now().toLocaleString() }` )
 	scheduleProcessing()
 
-	const nodeBinPath = process.argv[ 0 ] || process.env._
+	const nodeBinPath = process.execPath
 
 	// spawn detached sub process to spy on the pids
 	const spawn = childProcess.spawn(
