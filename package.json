@@ -1,14 +1,13 @@
 {
   "name": "nozombie",
   "version": "0.7.0",
-  "description": "tools to kill zombies",
-  "main": "index.js",
+  "description": "track pocesses and make sure they die when they are supposed to",
+  "main": "src/main.js",
   "files": [
-    "index.js"
+    "src/main.js"
   ],
   "scripts": {
-    "debug": "DEBUG_NOZOMBIE=1 tape test/index.js",
-    "test": "tape test/index.js"
+    "test": "node test/test.js"
   },
   "keywords": [
     "nozombie"
@@ -24,12 +23,11 @@
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {
-    "ps-list": "~6.3.0",
-    "run-parallel-limit": "~1.0.5",
+    "ps-list": "~7.2.0",
+    "tempy": "~0.6.0",
     "tree-kill": "~1.2.2"
   },
   "devDependencies": {
-    "tape": "~4.10.2",
-    "usage": "~0.7.1"
+    "tape": "~5.0.1"
   }
 }
