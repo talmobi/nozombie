@@ -40,9 +40,9 @@ test( 'basic usage', async function ( t ) {
 	} )
 
 	const buffer = []
-	const parentProcess = spawn( 'parent', 1000 * 10, buffer )
+	const parentProcess = spawn( 'parent', 1000 * 12, buffer )
 	const childProcess1 = spawn( 'child1', 1000 * 2, buffer )
-	const childProcess2 = spawn( 'child2', 1000 * 10, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
 
 	nz.addParent( parentProcess.pid )
 	nz.add( childProcess1.pid )
@@ -63,21 +63,21 @@ test( 'basic usage', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: parent, timeout: 10000',
+			'type: init, name: parent, timeout: 12000',
 			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child2, timeout: 12000',
 		].sort(),
 		'all spawns init OK'
 	)
 
-	await sleep( 1500 )
+	await sleep( 3000 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: parent, timeout: 10000',
+			'type: init, name: parent, timeout: 12000',
 			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child2, timeout: 12000',
 			'type: done, name: child1',
 			'child1 exit',
 		].sort(),
@@ -107,9 +107,9 @@ test( 'basic usage', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: parent, timeout: 10000',
+			'type: init, name: parent, timeout: 12000',
 			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child2, timeout: 12000',
 			'type: done, name: child1',
 			'child1 exit',
 			'parent exit',
@@ -133,10 +133,10 @@ test( 'namespaces', async function ( t ) {
 
 	const buffer = []
 	const childProcess1 = spawn( 'child1', 1000 * 2, buffer )
-	const childProcess2 = spawn( 'child2', 1000 * 10, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
 	const childProcess3 = spawn( 'child3', 1000 * 2, buffer )
-	const childProcess4 = spawn( 'child4', 1000 * 10, buffer )
-	const childProcess5 = spawn( 'child5', 1000 * 10, buffer )
+	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
+	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
 
 	nz.addChild( { pid: childProcess1.pid, name: 'whale' } )
 	nz.addChild( { pid: childProcess2.pid, name: 'whale' } )
@@ -160,30 +160,30 @@ test( 'namespaces', async function ( t ) {
 		buffer.push( 'child5 exit' )
 	} )
 
-	await sleep( 1000 )
-
-	t.deepEqual(
-		buffer.slice().sort().map( line => line.trim() ),
-		[
-			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
-			'type: init, name: child3, timeout: 2000',
-			'type: init, name: child4, timeout: 10000',
-			'type: init, name: child5, timeout: 10000',
-		].sort(),
-		'all spawns init OK'
-	)
-
 	await sleep( 1500 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child2, timeout: 12000',
 			'type: init, name: child3, timeout: 2000',
-			'type: init, name: child4, timeout: 10000',
-			'type: init, name: child5, timeout: 10000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
+		].sort(),
+		'all spawns init OK'
+	)
+
+	await sleep( 3000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child3, timeout: 2000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child1',
 			'type: done, name: child3',
 			'child1 exit',
@@ -202,10 +202,10 @@ test( 'namespaces', async function ( t ) {
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: child1, timeout: 2000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child2, timeout: 12000',
 			'type: init, name: child3, timeout: 2000',
-			'type: init, name: child4, timeout: 10000',
-			'type: init, name: child5, timeout: 10000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child1',
 			'type: done, name: child3',
 			'child1 exit',
