@@ -4,15 +4,36 @@ const childProcess = require( 'child_process' )
 const fs = require( 'fs' )
 const path = require( 'path' )
 
+const util = require( './util.js' )
+
+const _envs = {}
+Object.keys( process.env ).forEach(
+	function ( key ) {
+		const n = process.env[ key ]
+		if ( n == '0' || n == 'false' || !n ) {
+			return _envs[ key ] = false
+		}
+		_envs[ key ] = n
+	}
+)
+
 module.exports = function nozombie ( opts ) {
 	let sendQueue = []
 
 	const tempfile = tempy.file()
-	console.log( 'tempfile: ' + tempfile )
+	const logfile = tempfile + '-debug.log'
 
-	fs.writeFileSync( tempfile, 'https://github.com/talmobi/nozombie\n', 'utf8' )
-	sendQueue.push( `type: parent, pid: ${ process.pid }, date_ms: ${ Date.now() }` )
-	processSendQueue()
+	if ( !!_envs[ 'debug_nozombie' ] ) {
+		console.log( 'tempfile: ' + tempfile )
+		console.log( 'logfile: ' + logfile )
+	}
+
+	let write_buffer = ''
+	let ack = 1
+
+	fs.writeFileSync( tempfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
+	sendQueue.push( `// started by pid: ${ process.pid }, date: ${ Date.now().toLocaleString() }` )
+	scheduleProcessing()
 
 	const nodeBinPath = process.argv[ 0 ] || process.env._
 
@@ -23,6 +44,8 @@ module.exports = function nozombie ( opts ) {
 			path.join( __dirname, './main-spawn.js' ),
 			process.pid, // initial parent pid
 			tempfile,
+			logfile,
+			!!_envs[ 'debug_nozombie' ],
 			'nozombie-spawn' // an ignored arg to help ps filtering
 		],
 		{
@@ -37,69 +60,70 @@ module.exports = function nozombie ( opts ) {
 	spawn.unref() // make parent (this process) not wait for child before exiting
 
 	function addParent ( pid ) {
-		while ( typeof pid === 'object' ) {
-			pid = pid.pid
-		}
-
 		// normalize pid
 		const n = Number( pid )
-		if (
-			typeof n !== 'number' || Number.isNaN( n ) || n == null || !n
-		) throw new TypeError( 'failed to parse pid: ' + pid )
+		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid parent pid: ' + pid )
 
-		sendQueue.push( `type: parent, pid: ${ n }, date_ms: ${ Date.now() }` )
+		sendQueue.push( `type: parent, pid: ${ n }, date_ms: ${ Date.now() }, ack: ${ ack++ }` )
 		scheduleProcessing()
 	}
 
-	function addChild ( pid, ttl ) {
-		while ( typeof pid === 'object' ) {
-			pid = pid.pid
+	function addChild ( opts ) {
+		if ( typeof opts !== 'object' ) {
+			const n = Number( opts )
+			if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts )
+			opts = {
+				pid: n
+			}
 		}
 
-		if ( !pid ) {
-			/* most likely spawned process ( spawn.pid ) supplied
-			 * that was undefined due to the spawned process failing
-			 * to run ( ex. wrong command/argument variables )
-			 */
-			return // ignore it
-		}
-
-		// normalize pid
-		const n = Number( pid )
-		if (
-			typeof n !== 'number' || Number.isNaN( n ) || n == null || !n
-		) throw new TypeError( 'failed to parse pid: ' + pid )
-
-		let t = `type: child, pid: ${ n }, date_ms: ${ Date.now() }`
-		if ( ttl >= 0 ) t += `, ttl_ms: ${ ttl }`
+		let t = `type: child, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
+		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
+		if ( opts.name ) t += `, name: ${ opts.name }`
 		sendQueue.push( t )
 		scheduleProcessing()
 	}
 
-	function processSendQueue () {
-		if ( sendQueue.length > 0 ) {
-			let buffer = ''
-			for ( let i = 0; i < sendQueue.length; i++ ) {
-				const data = sendQueue[ i ] + '\n'
-				buffer += data
-			}
-			fs.appendFileSync( tempfile, buffer, 'utf8' )
-			sendQueue.length = 0
-		}
+	function kill ( name ) {
+		let t = `type: kill, date_ms: ${ Date.now() }, ack: ${ ack++ }`
+		if ( name ) t += `, name: ${ name }`
+		sendQueue.push( t )
+		scheduleProcessing()
 	}
 
-	function scheduleProcessing () {
+	async function processSendQueue () {
+		return new Promise( async function ( resolve ) {
+			if ( sendQueue.length > 0 ) {
+				while ( sendQueue.length > 0 ) {
+					const line = sendQueue.shift() + '\n'
+					write_buffer += line
+				}
+
+				try {
+					await util.appendFile( tempfile, write_buffer )
+					write_buffer = ''
+				} catch ( err ) {
+					scheduleProcessing( 1000 )
+				}
+				resolve()
+			}
+		} )
+	}
+
+	function scheduleProcessing ( ms ) {
 		const timeout = processSendQueue.timeout
 		if ( timeout ) return
-		processSendQueue.timeout = setTimeout( function () {
+		processSendQueue.timeout = setTimeout( async function () {
 			processSendQueue.timeout = undefined
-			processSendQueue()
-		}, 0 )
+			await processSendQueue()
+		}, ms || 0 )
 	}
 
 	return {
 		addParent,
 		addChild,
+		add: addChild,
+		kill,
 		tempfile,
 		spawn
 	}

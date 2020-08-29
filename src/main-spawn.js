@@ -1,10 +1,20 @@
 const fs = require( 'fs' )
 const psList = require( 'ps-list' )
 const treeKill = require( 'tree-kill' )
+const tempy = require( 'tempy' )
+
+const util = require( './util.js' )
 
 const args = process.argv.slice( 2 )
-// the user process will communicate commands through this file
-const tempfile = String( args[ 1 ] )
+const main_parent = Number( args[ 0 ] ) // main parent pid
+const tempfile = String( args[ 1 ] ) // read commands from main parent from this file
+const logfile = String( args[ 2 ] ) // write debug logs to this file when debugging
+
+const debugging = !!args[ 3 ]
+
+if ( debugging ) {
+	fs.writeFileSync( logfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
+}
 
 // time to poll for pids
 const POLL_INTERVAL_MS = 333
@@ -12,15 +22,19 @@ const POLL_INTERVAL_MS = 333
 // time to wait (and kill children) before exiting
 const WAIT_BEFORE_SUICIDE_MS = 1000 * 5
 
+const MAX_CHILD_KILL_ATTEMPTS = 10
+
 // lines to skip because they have already been processed
-let current_line_position = 1 // skip first intro line
+let ack = 0
 
 let _running = true
-let _time_of_death
+let _time_of_death // time when main parent dies and we go into exit/cleanup mode
+
+// attempt to kill all children that were added before this time
+let _kill_children_before_this_time_ms = Date.now()
 
 let parents = {} // if any parent pid dies, kill all children
-const fpid = Number( args[ 0 ] )
-parents[ fpid ] = { pid: fpid, date_ms: Date.now() }
+parents[ main_parent ] = { pid: main_parent, date_ms: Date.now() }
 let children = {} // pids to kill if any parent dies
 const ttls = {} // time to live timeouts. kill pid if ttl expires
 
@@ -28,20 +42,27 @@ const ttls = {} // time to live timeouts. kill pid if ttl expires
 setTimeout( tick, 0 )
 
 function log ( text ) {
-	// fs.appendFileSync( tempfile, 'log: ' + text + '\n', 'utf8' )
-	console.log( text )
+	if ( debugging ) {
+		fs.appendFileSync( logfile, text + '\n', 'utf8' )
+	}
 }
 
 async function tick ()
 {
 	// read commands from user process and update pid lists
-	const text = fs.readFileSync( tempfile, 'utf8' ).trim()
-	const lines = text.split( /[\r\n]+/ ).slice( current_line_position )
-	const messages = lines.map( function ( line ) {
-		line = line.trim()
-		if ( !line ) return // ignore empty lines
-		current_line_position++
-		if ( line.indexOf( 'log:' ) === 0 ) return // ignore logs
+	log( 'ticking' )
+	const text = ( await util.readFile( tempfile ) ).trim()
+	const lines = text.split( /[\r\n]+/ )
+	log( 'got lines: ' + lines.length )
+	const messages = []
+	for ( let i = 0; i < lines.length; i++ ) {
+		log( 'index: ' + i )
+		const line = ( lines[ i ] || '' ).trim()
+		if ( !line ) continue
+		if ( line.indexOf( '//' ) === 0 ) continue
+
+		log( 'line: ' + line )
+
 		const msg = {}
 		line
 		.split( ',' )
@@ -52,9 +73,25 @@ async function tick ()
 			const value = pair[ 1 ].trim()
 			msg[ key ] = value
 		} )
+
+		if ( !msg.ack ) {
+			log( 'no ack found' )
+			continue
+		}
+
+		if ( msg.ack <= ack ) {
+			// already processed
+			continue
+		} else {
+			ack = msg.ack
+			log( 'new ack: ' + ack )
+		}
+
 		log( JSON.stringify( msg ) )
-		return msg
-	} )
+		messages.push( msg )
+	}
+	log( 'messages processed?' )
+
 	processMessages( messages )
 
 	// get fresh list of alive pids
@@ -69,45 +106,45 @@ async function tick ()
 	// update list of children and remove pid's that have died
 	for ( let pid in children ) {
 		if ( !alive[ pid ] ) {
-			log( 'removing child: ' + pid )
+			log( 'removing dead child: ' + pid )
 			delete children[ pid ]
+			clearTimeout( ttls[ pid ] ) // clear ttl timeout if any
 		}
 	}
 
-	if ( !_running ) {
+	if ( _running ) {
+		let main_parent_has_died = !alive[ main_parent ]
+
+		let parents_have_died = false
+		for ( let pid in parents ) {
+			if ( !alive[ pid ] ) parents_have_died = true
+		}
+
+		if ( main_parent_has_died ) {
+			log( 'main parent has died' )
+			_running = false
+			_time_of_death = Date.now()
+			await killAllChildren()
+		} else if ( parents_have_died ) {
+			log( 'parents have died' )
+			_kill_children_before_this_time_ms = Date.now()
+			await killAllChildren()
+		}
+
+		scheduleNextTick()
+	} else {
 		const delta = ( Date.now() - _time_of_death )
 		if ( delta < WAIT_BEFORE_SUICIDE_MS ) {
 			await killAllChildren()
 			return scheduleNextTick()
 		} else {
-			let childrenAlive = false
-			let goodbyeText = `exiting, pid: ${ process.pid }`
 			for ( let pid in children ) {
-				childrenAlive = true
-				log( 'child left alive: ' + pid )
-				goodbyeText += `child left alive, pid: ${ pid }`
+				log( 'child left alive, pid: ' + pid )
 			}
-			goodbyeText += `thanks for all the fish, ${ ( new Date() ).toLocaleString() }`
-			log( 'exiting' )
-			fs.appendFileSync( tempfile, goodbyeText, 'utf8' )
-			if ( !childrenAlive ) fs.unlinkSync( tempfile ) // cleanup
-			return process.exit()
+			log( 'exiting, pid: ' + process.pid )
+			if ( !debugging ) fs.unlinkSync( tempfile ) // cleanup
+			process.exit()
 		}
-	} else {
-		// check if any parents have died
-		let parentsHaveDied = false
-		for ( let pid in parents ) {
-			if ( !alive[ pid ] ) parentsHaveDied = true
-		}
-
-		if ( parentsHaveDied ) {
-			log( 'parents have died' )
-			_running = false
-			_time_of_death = Date.now()
-			await killAllChildren()
-		}
-
-		scheduleNextTick()
 	}
 }
 
@@ -124,14 +161,19 @@ async function kill ( pid, signal )
 	} )
 }
 
-async function killAllChildren ()
+async function killAllChildren ( tags )
 {
 	for ( let pid in children ) {
 		const child = children[ pid ]
+
 		child.kill_attempts = child.kill_attempts || 0
 		child.kill_attempts++
+
 		let signal = 'SIGKILL'
-		await kill( pid, signal )
+
+		if ( child.kill_attempts < MAX_CHILD_KILL_ATTEMPTS ) {
+			await kill( pid, signal )
+		}
 	}
 }
 
@@ -142,7 +184,9 @@ function processMessages ( messages )
 	for ( let i = 0; i < messages.length; i++ ) {
 		const message = messages[ i ]
 
-		if ( typeof message !== 'object' ) continue
+		if ( typeof message !== 'object' ) {
+			log( 'undefined message: ' + message )
+		}
 
 		log( 'message type: ' + message.type )
 
@@ -155,6 +199,10 @@ function processMessages ( messages )
 				processChildMessage( message )
 				break
 
+			case 'kill':
+				processKillMessage( message )
+				break
+
 			default:
 				// ignore
 				log( 'unknown message type: ' + message.type )
@@ -163,6 +211,8 @@ function processMessages ( messages )
 }
 
 function processParentMessage ( message ) {
+	log( 'processing parent message' )
+
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'parent pid error: ' + message.pid )
 	parents[ pid ] = { pid: pid, date_ms: Date.now() }
@@ -170,26 +220,53 @@ function processParentMessage ( message ) {
 }
 
 function processChildMessage ( message ) {
+	log( 'processing child message' )
+
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'child pid error: ' + message.pid )
-	children[ pid ] = { pid: pid, date_ms: Date.now() }
+	children[ pid ] = { pid: pid, date_ms: Number( message.date_ms ) }
+	if ( message.name != null ) children[ pid ].name = message.name
 	log( 'added child: ' + pid )
 
 	const date_ms = Number( message.date_ms )
 	const ttl_ms = Number( message.ttl_ms )
 
 	if ( ttl_ms >= 0 ) {
-		const time_of_death = ( date_ms + ttl_ms )
-		const now = Date.now()
-		const delta = ( time_of_death - now )
-		const timeout_ms = delta <= 0 ? 0 : delta
+		const time_of_death_ms = ( date_ms + ttl_ms )
+		const time_until_death_ms = ( time_of_death_ms - Date.now() )
+		const timeout_ms = time_until_death_ms <= 0 ? 0 : time_until_death_ms
 
 		// clear/update previous ttl
 		clearTimeout( ttls[ pid ] )
 		ttls[ pid ] = setTimeout( function () {
 			// kill the child
-			kill( pid )
+			kill( pid, 'SIGKILL' )
 		}, timeout_ms )
+	}
+}
+
+async function processKillMessage ( message ) {
+	log( 'processing kill message' )
+
+	const date_ms = Number( message.date_ms )
+	const name = message.name || ''
+
+	for ( let pid in children ) {
+		const child = children[ pid ]
+
+		// skip child if name is specified but doesn't match
+		if ( name != null && child.name != name ) {
+			log( 'kill command skipping child: name did not match' )
+			continue
+		}
+
+		// kill all children that existed when the kill command was given
+		if ( child.date_ms < date_ms ) {
+			child.should_be_killed = true
+			await kill( pid )
+		} else {
+			log( 'kill command skipping child: date_ms is higher' )
+		}
 	}
 }
 
