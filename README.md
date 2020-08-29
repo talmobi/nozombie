@@ -8,69 +8,75 @@ simple pid collection and [tree-kill](https://www.npmjs.com/package/tree-kill) b
 
 #### child_process
 ```javascript
-const nz = require( 'nozombie' )()
-
+const nozombie = require( 'nozombie' )
 const spawn = childProcess.spawn( ... )
-
-// optional minimum time to live until killed by force
-const ttl = 1000 * 60 * 5 // 5 min
-
-nz.add( spawn.pid, ttl )
-
-// ...
-
-nz.kill( [function ( err, list_of_pids_killed ) {}] )
+nz.add( spawn.pid ) // child will be killed when process.pid dies
 ```
 
-### puppeteer
+#### puppeteer
 ```javascript
 const browser = await puppeteer.launch( opts )
 const child = browser.process()
-const pid = child.pid
+nz.add( child.pid )
+```
 
-// optional minimum time to live until killed by force
-const ttl = 1000 * 60 * 5 // 5 min
+#### time to live
+```javascript
+const nozombie = require( 'nozombie' )
+const spawn = childProcess.spawn( ... )
+const FIVE_MINUTES_MS = 1000 * 60 * 5
 
-nz.add( pid, ttl )
+// child will be killed when process.pid dies or 5 minutes have passed
+nz.add( spawn.pid, 1000 * 60 * 5 )
 
-// ...
+// to update the ttl just add the process pid again with a new ttl
+nz.add( spawn.pid, 1000 * 60 * 5 ) // update ttl
+```
 
-nz.kill( [function ( err, list_of_pids_killed ) {}] )
+#### add another parent
+Add more parent pids. When ANY of the parent pids dies, all children will be
+killed. A pid can be a parent and a child at the same time.
+
+The list of parents by default includes only `process.pid`.
+
+```javascript
+const parent = childProcess.spawn( ... )
+const child1 = childProcess.spawn( ... )
+const child2 = childProcess.spawn( ... )
+
+nz.addParent( parent.pid )
+nz.addChild( child1.pid )
+nz.addChild( child2.pid )
+
+parent.kill() // this will kill all children
 ```
 
 ## About
 
-Collect and keep track of pid's and kill them off.
-
-## API
-```javascript
-// add pid to list
-nz.add( pid )
-
-// optional maximum ttl ( milliseconds ) before killed
-nz.add( pid, ttl )
-
-// get (copy) of pids list
-var list = nz.list()
-
-// kill pids
-nz.kill( [function ( err, list_of_pids_killed ) {}] )
-```
+Collect and keep track of pid's and kill them off when any parent pid dies.
 
 ## Why
 
-To help keep track of pid's that need to be killed off and not leave running. And to reduce boilerplate for doing.
+To help keep track of pid's that need to be killed off and not leave running.
 
 ## For who?
 
-For those who have trouble with zombie processes or have trouble keeping track of them or want to reduce/simplify the process.
+For those wanting a simple way prevent zombies.
 
 ## How
 
-Using [tree-kill](https://www.npmjs.com/package/tree-kill)  and a simple module API.
+By spawning a detached, stdio ignored, unref'ed subprocess to keep track of
+pids. Once it notices that a parent pid has died, it will go into a killing
+rampage of children pid's and then after ~5 seconds it will kill itself
+(regardless if children pid's are still alive or not)
 
-## Alternatives
+The subprocess reads the relevent pid's from a shared temporary file the calling
+process creates before spawning the subprocess. The subprocess will remove this
+temporary file before it kills itself.
+
+## Similar
 [tree-kill](https://www.npmjs.com/package/tree-kill)
+[ps-list](https://www.npmjs.com/package/ps-list).
 
 ## Test
 ```
