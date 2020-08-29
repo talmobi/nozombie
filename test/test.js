@@ -41,7 +41,7 @@ test( 'basic usage', async function ( t ) {
 
 	const buffer = []
 	const parentProcess = spawn( 'parent', 1000 * 12, buffer )
-	const childProcess1 = spawn( 'child1', 1000 * 2, buffer )
+	const childProcess1 = spawn( 'child1', 1000 * 3, buffer )
 	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
 
 	nz.addParent( parentProcess.pid )
@@ -58,13 +58,13 @@ test( 'basic usage', async function ( t ) {
 		buffer.push( 'parent exit' )
 	} )
 
-	await sleep( 1500 )
+	await sleep( 2500 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: parent, timeout: 12000',
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
 		].sort(),
 		'all spawns init OK'
@@ -76,7 +76,7 @@ test( 'basic usage', async function ( t ) {
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: parent, timeout: 12000',
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
 			'type: done, name: child1',
 			'child1 exit',
@@ -108,7 +108,7 @@ test( 'basic usage', async function ( t ) {
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: parent, timeout: 12000',
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
 			'type: done, name: child1',
 			'child1 exit',
@@ -132,9 +132,9 @@ test( 'namespaces', async function ( t ) {
 	} )
 
 	const buffer = []
-	const childProcess1 = spawn( 'child1', 1000 * 2, buffer )
+	const childProcess1 = spawn( 'child1', 1000 * 3, buffer )
 	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
-	const childProcess3 = spawn( 'child3', 1000 * 2, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 3, buffer )
 	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
 	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
 
@@ -160,14 +160,14 @@ test( 'namespaces', async function ( t ) {
 		buffer.push( 'child5 exit' )
 	} )
 
-	await sleep( 1500 )
+	await sleep( 2500 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 2000',
+			'type: init, name: child3, timeout: 3000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 		].sort(),
@@ -179,9 +179,9 @@ test( 'namespaces', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 2000',
+			'type: init, name: child3, timeout: 3000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child1',
@@ -201,9 +201,9 @@ test( 'namespaces', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 2000',
+			'type: init, name: child1, timeout: 3000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 2000',
+			'type: init, name: child3, timeout: 3000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child1',
