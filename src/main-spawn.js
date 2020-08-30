@@ -117,7 +117,9 @@ async function update_pids ()
 		alive[ pid ] = true
 	} )
 
-	// update list of children and remove pid's that have died
+	// update list of children and remove pid's that have died we need to do
+	// this because process pid's are re-used and becomes available after a
+	// process dies. This will prevent re-killing unrelated children processes.
 	for ( let pid in children ) {
 		if ( !alive[ pid ] ) {
 			log( 'removing dead child: ' + pid )
