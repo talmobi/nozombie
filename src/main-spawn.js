@@ -280,8 +280,7 @@ function processChildMessage ( message ) {
 		// clear/update previous ttl
 		clearTimeout( ttls[ pid ] )
 		ttls[ pid ] = setTimeout( function () {
-			// kill the child
-			killChild( pid, 'SIGKILL' )
+			if ( children[ pid ] ) children[ pid ].should_be_killed = true
 		}, timeout_ms )
 	}
 }
