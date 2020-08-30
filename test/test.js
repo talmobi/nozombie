@@ -157,7 +157,7 @@ test( 'kill children but not children added after the call', async function ( t 
 	nz.kill()
 	nz.add( childProcess2.pid )
 
-	await sleep( 5000 )
+	await sleep( 7000 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
