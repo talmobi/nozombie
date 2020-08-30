@@ -122,6 +122,56 @@ test( 'basic usage', async function ( t ) {
 	)
 } )
 
+test( 'kill children but not children added after the call', async function ( t ) {
+	t.timeoutAfter( 1000 * 15 )
+
+	const nz = nozombie()
+	nz.spawn.on( 'exit', function () {
+		t.plan( 3 )
+		t.pass( 'nozombie exited OK' )
+	} )
+
+	const buffer = []
+	const childProcess1 = spawn( 'child1', 1000 * 7, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 7, buffer )
+
+	childProcess1.on( 'exit', function () {
+		buffer.push( 'child1 exit' )
+	} )
+	childProcess2.on( 'exit', function () {
+		buffer.push( 'child2 exit' )
+	} )
+
+	await sleep( 2500 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 7000',
+			'type: init, name: child2, timeout: 7000',
+		].sort(),
+		'all spawns init OK'
+	)
+
+	nz.add( childProcess1.pid )
+	nz.kill()
+	nz.add( childProcess2.pid )
+
+	await sleep( 5000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 7000',
+			'type: init, name: child2, timeout: 7000',
+			'type: done, name: child2',
+			'child1 exit',
+			'child2 exit',
+		].sort(),
+		'child1 exit and child2 completed OK'
+	)
+} )
+
 test( 'name, namespaces', async function ( t ) {
 	t.timeoutAfter( 1000 * 15 )
 
