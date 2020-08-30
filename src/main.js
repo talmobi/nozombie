@@ -42,7 +42,7 @@ module.exports = function nozombie ( opts ) {
 		nodeBinPath,
 		[
 			path.join( __dirname, './main-spawn.js' ),
-			process.pid, // initial parent pid
+			process.pid, // main parent pid
 			tempfile,
 			logfile,
 			!!_envs[ 'debug_nozombie' ],
@@ -50,7 +50,7 @@ module.exports = function nozombie ( opts ) {
 		],
 		{
 			// see: https://devdocs.io/node~10_lts/child_process#child_process_options_detached
-			detached: true, // possible to run after parents exists on windows
+			detached: true, // possible to run after parent exists on windows
 			stdio: 'ignore', // disconnect io from parent allowing for independent running
 			windowsHide: true // don't open console on windows
 		}
