@@ -49,6 +49,12 @@ module.exports = function nozombie ( opts ) {
 			'nozombie-spawn' // an ignored arg to help ps filtering
 		],
 		{
+			env: {
+				// less threads if possible
+				UV_THEADPOOL_SIZE: 1,
+				v8_thread_pool_size: 1
+			},
+
 			// see: https://devdocs.io/node~10_lts/child_process#child_process_options_detached
 			detached: true, // possible to run after parent exists on windows
 			stdio: 'ignore', // disconnect io from parent allowing for independent running
