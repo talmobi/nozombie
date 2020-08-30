@@ -104,6 +104,10 @@ async function get_messages ()
 
 async function update_pids ()
 {
+	// we have to check ps-list even if we have no children in order to know
+	// when our parent pid dies
+	// if ( Object.keys( children ).length <= 0 ) return
+
 	// get fresh list of alive pids
 	const alive = {}
 	;( await psList() ).forEach( function ( { pid } ) {
