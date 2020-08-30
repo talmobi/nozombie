@@ -278,16 +278,16 @@ test( 'ttl, time to live', async function ( t ) {
 	} )
 
 	const buffer = []
-	const childProcess1 = spawn( 'child1', 1000 * 3, buffer )
+	const childProcess1 = spawn( 'child1', 1000 * 6, buffer )
 	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
-	const childProcess3 = spawn( 'child3', 1000 * 3, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 6, buffer )
 	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
 	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
 
-	nz.addChild( { pid: childProcess1.pid, name: 'whale', ttl: 0 } )
+	nz.addChild( { pid: childProcess1.pid, name: 'whale', ttl: 3000 } )
 	nz.addChild( { pid: childProcess2.pid, name: 'whale' } )
-	nz.addChild( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 4  } )
-	nz.addChild( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 4 } )
+	nz.addChild( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 8  } )
+	nz.addChild( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 8 } )
 	nz.addChild( { pid: childProcess5.pid, name: 'whale' } )
 
 	childProcess1.on( 'exit', function () {
@@ -306,14 +306,14 @@ test( 'ttl, time to live', async function ( t ) {
 		buffer.push( 'child5 exit' )
 	} )
 
-	await sleep( 2500 )
+	await sleep( 5500 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child1, timeout: 6000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child3, timeout: 6000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 			'child1 exit',
@@ -344,9 +344,9 @@ test( 'ttl, time to live', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child1, timeout: 6000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child3, timeout: 6000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child3',
@@ -354,7 +354,7 @@ test( 'ttl, time to live', async function ( t ) {
 			'child3 exit',
 			'child4 exit',
 		].sort(),
-		'more children killed by ttl'
+		'child3 completed and exited before ttl, but child4 only exited OK'
 	)
 
 	await sleep( 5000 )
@@ -362,9 +362,9 @@ test( 'ttl, time to live', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child1, timeout: 6000',
 			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child3, timeout: 6000',
 			'type: init, name: child4, timeout: 12000',
 			'type: init, name: child5, timeout: 12000',
 			'type: done, name: child3',
