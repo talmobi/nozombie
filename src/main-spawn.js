@@ -17,7 +17,10 @@ if ( debugging ) {
 }
 
 // time to poll for pids
-const POLL_INTERVAL_MS = 333
+const INTERVAL_PID_POLL_MS = 1000
+
+// time to read new actions from the user process
+const INTERVAL_READ_POLL_MS = 200
 
 // time to wait (and kill children) before exiting
 const WAIT_BEFORE_SUICIDE_MS = 1000 * 5
@@ -30,9 +33,6 @@ let ack = 0
 let _running = true
 let _time_of_death // time when main parent dies and we go into exit/cleanup mode
 
-// attempt to kill all children that were added before this time
-let _kill_children_before_this_time_ms = Date.now()
-
 let parents = {} // if any parent pid dies, kill all children
 parents[ main_parent ] = { pid: main_parent, date_ms: Date.now() }
 let children = {} // pids to kill if any parent dies
@@ -40,6 +40,7 @@ const ttls = {} // time to live timeouts. kill pid if ttl expires
 
 // start ticking
 setTimeout( tick, 0 )
+setTimeout( read, 0 )
 
 function log ( text ) {
 	if ( debugging ) {
@@ -47,7 +48,13 @@ function log ( text ) {
 	}
 }
 
-async function tick ()
+async function read ()
+{
+	await get_messages()
+	setTimeout( read, INTERVAL_READ_POLL_MS )
+}
+
+async function get_messages ()
 {
 	// read commands from user process and update pid lists
 	log( 'ticking' )
@@ -92,8 +99,11 @@ async function tick ()
 	}
 	log( 'messages processed?' )
 
-	processMessages( messages )
+	await processMessages( messages )
+}
 
+async function update_pids ()
+{
 	// get fresh list of alive pids
 	const alive = {}
 	;( await psList() ).forEach( function ( { pid } ) {
@@ -112,31 +122,44 @@ async function tick ()
 		}
 	}
 
-	if ( _running ) {
-		let main_parent_has_died = !alive[ main_parent ]
+	// attempt to kill any children that should be dead
+	for ( let pid in children ) {
+		const child = children[ pid ]
+		if ( child.should_be_killed ) {
+			await killChild( pid )
+		}
+	}
 
+	let main_parent_has_died = !alive[ main_parent ]
+	if ( _running && main_parent_has_died ) {
+		log( 'main parent has died' )
+		_running = false
+		_time_of_death = Date.now()
+	}
+
+	if ( _running ) {
 		let parents_have_died = false
 		for ( let pid in parents ) {
 			if ( !alive[ pid ] ) parents_have_died = true
 		}
 
-		if ( main_parent_has_died ) {
-			log( 'main parent has died' )
-			_running = false
-			_time_of_death = Date.now()
-			await killAllChildren()
-		} else if ( parents_have_died ) {
-			log( 'parents have died' )
-			_kill_children_before_this_time_ms = Date.now()
+		if ( parents_have_died ) {
 			await killAllChildren()
 		}
+	}
+}
 
+async function tick ()
+{
+	await update_pids()
+
+	if ( _running ) {
 		scheduleNextTick()
 	} else {
 		const delta = ( Date.now() - _time_of_death )
 		if ( delta < WAIT_BEFORE_SUICIDE_MS ) {
 			await killAllChildren()
-			return scheduleNextTick()
+			scheduleNextTick()
 		} else {
 			for ( let pid in children ) {
 				log( 'child left alive, pid: ' + pid )
@@ -148,12 +171,20 @@ async function tick ()
 	}
 }
 
-async function kill ( pid, signal )
+async function killChild ( pid, signal )
 {
+	const child = children[ pid ]
+	child.kill_attempts = child.kill_attempts || 0
+	child.should_be_killed = true // attempt periodically every tick (~1second)
+
 	signal = signal || 'SIGKILL'
+	if ( child.kill_attempts > 0 ) signal = 'SIGKILL'
 
 	log( 'killing child: ' + pid )
 	return new Promise( function ( resolve, reject ) {
+		// ignore unkillable children
+		if ( ++child.kill_attempts > MAX_CHILD_KILL_ATTEMPTS ) return resolve()
+
 		treeKill( pid, signal, function ( err ) {
 			if ( err ) log( err ) // ignore
 			resolve()
@@ -165,19 +196,12 @@ async function killAllChildren ( tags )
 {
 	for ( let pid in children ) {
 		const child = children[ pid ]
-
-		child.kill_attempts = child.kill_attempts || 0
-		child.kill_attempts++
-
 		let signal = 'SIGKILL'
-
-		if ( child.kill_attempts < MAX_CHILD_KILL_ATTEMPTS ) {
-			await kill( pid, signal )
-		}
+		await killChild( pid, signal )
 	}
 }
 
-function processMessages ( messages )
+async function processMessages ( messages )
 {
 	log( 'processing messages' )
 
@@ -200,7 +224,7 @@ function processMessages ( messages )
 				break
 
 			case 'kill':
-				processKillMessage( message )
+				await processKillMessage( message )
 				break
 
 			default:
@@ -245,7 +269,7 @@ function processChildMessage ( message ) {
 		clearTimeout( ttls[ pid ] )
 		ttls[ pid ] = setTimeout( function () {
 			// kill the child
-			kill( pid, 'SIGKILL' )
+			killChild( pid, 'SIGKILL' )
 		}, timeout_ms )
 	}
 }
@@ -267,8 +291,7 @@ async function processKillMessage ( message ) {
 
 		// kill all children that existed when the kill command was given
 		if ( child.ack < message.ack ) {
-			child.should_be_killed = true
-			await kill( pid )
+			await killChild( pid )
 		} else {
 			log( 'kill command skipping child: date_ms is higher' )
 		}
@@ -279,5 +302,5 @@ function scheduleNextTick ()
 {
 	log( 'scheduling tick' )
 	clearTimeout( tick.timeout )
-	tick.timeout = setTimeout( tick, POLL_INTERVAL_MS )
+	tick.timeout = setTimeout( tick, INTERVAL_PID_POLL_MS )
 }
