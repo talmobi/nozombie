@@ -23,7 +23,7 @@ const INTERVAL_PID_POLL_MS = 1000
 const INTERVAL_READ_POLL_MS = 200
 
 // time to wait (and kill children) before exiting
-const WAIT_BEFORE_SUICIDE_MS = 1000 * 5
+const WAIT_BEFORE_SUICIDE_MS = 1000 * 15
 
 const MAX_CHILD_KILL_ATTEMPTS = 10
 
@@ -144,7 +144,11 @@ async function update_pids ()
 	if ( _running ) {
 		let parents_have_died = false
 		for ( let pid in parents ) {
-			if ( !alive[ pid ] ) parents_have_died = true
+			if ( !alive[ pid ] ) {
+				log( 'removing dead parent: ' + pid )
+				parents_have_died = true
+				delete parents[ pid ]
+			}
 		}
 
 		if ( parents_have_died ) {
@@ -161,16 +165,20 @@ async function tick ()
 		scheduleNextTick()
 	} else {
 		const delta = ( Date.now() - _time_of_death )
-		if ( delta < WAIT_BEFORE_SUICIDE_MS ) {
-			await killAllChildren()
-			scheduleNextTick()
-		} else {
+		const all_children_are_Dead = ( Object.keys( children ).length <= 0 )
+
+		if ( all_children_are_Dead || delta > WAIT_BEFORE_SUICIDE_MS ) {
 			for ( let pid in children ) {
 				log( 'child left alive, pid: ' + pid )
 			}
 			log( 'exiting, pid: ' + process.pid )
 			if ( !debugging ) fs.unlinkSync( tempfile ) // cleanup
 			process.exit()
+		} else {
+			for ( let pid in children ) {
+				children[ pid ].should_be_killed = true
+			}
+			scheduleNextTick()
 		}
 	}
 }
@@ -196,7 +204,7 @@ async function killChild ( pid, signal )
 	} )
 }
 
-async function killAllChildren ( tags )
+async function killAllChildren ()
 {
 	for ( let pid in children ) {
 		const child = children[ pid ]
