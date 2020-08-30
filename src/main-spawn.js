@@ -129,29 +129,37 @@ async function update_pids ()
 	// attempt to kill any children that should be dead
 	for ( let pid in children ) {
 		const child = children[ pid ]
-		if ( child.should_be_killed ) {
-			await killChild( pid )
+
+		if ( child.kill_attempts > MAX_CHILD_KILL_ATTEMPTS ) {
+			// ignore unkillable children
+			log( 'removing unkillable child: ' + pid )
+			delete children[ pid ]
+			clearTimeout( ttls[ pid ] ) // clear ttl timeout if any
+		} else {
+			if ( !_running || child.should_be_killed ) {
+				await killChild( pid )
+			}
 		}
 	}
 
 	let main_parent_has_died = !alive[ main_parent ]
-	if ( _running && main_parent_has_died ) {
-		log( 'main parent has died' )
-		_running = false
-		_time_of_death = Date.now()
+	let parents_have_died = false
+	for ( let pid in parents ) {
+		if ( !alive[ pid ] ) {
+			log( 'removing dead parent: ' + pid )
+			parents_have_died = true
+			delete parents[ pid ]
+		}
 	}
 
 	if ( _running ) {
-		let parents_have_died = false
-		for ( let pid in parents ) {
-			if ( !alive[ pid ] ) {
-				log( 'removing dead parent: ' + pid )
-				parents_have_died = true
-				delete parents[ pid ]
-			}
+		if ( main_parent_has_died ) {
+			log( 'main parent has died' )
+			_running = false
+			_time_of_death = Date.now()
 		}
 
-		if ( parents_have_died ) {
+		if ( main_parent_has_died || parents_have_died ) {
 			await killAllChildren()
 		}
 	}
@@ -165,9 +173,9 @@ async function tick ()
 		scheduleNextTick()
 	} else {
 		const delta = ( Date.now() - _time_of_death )
-		const all_children_are_Dead = ( Object.keys( children ).length <= 0 )
+		const all_children_are_Dead = ( Object.keys( children ).length === 0 )
 
-		if ( all_children_are_Dead || delta > WAIT_BEFORE_SUICIDE_MS ) {
+		if ( all_children_are_Dead || ( delta > WAIT_BEFORE_SUICIDE_MS ) ) {
 			for ( let pid in children ) {
 				log( 'child left alive, pid: ' + pid )
 			}
@@ -194,9 +202,6 @@ async function killChild ( pid, signal )
 
 	log( 'killing child: ' + pid )
 	return new Promise( function ( resolve, reject ) {
-		// ignore unkillable children
-		if ( ++child.kill_attempts > MAX_CHILD_KILL_ATTEMPTS ) return resolve()
-
 		treeKill( pid, signal, function ( err ) {
 			if ( err ) log( err ) // ignore
 			resolve()
