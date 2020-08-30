@@ -118,7 +118,7 @@ function nozombieFactory ( opts ) {
 
 		let t = `type: parent, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
 		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
-		if ( opts.name ) t += `, name: ${ opts.name }`
+		if ( opts.name != null ) t += `, name: ${ opts.name }`
 		sendQueue.push( t )
 		scheduleProcessing()
 	}
@@ -136,14 +136,14 @@ function nozombieFactory ( opts ) {
 
 		let t = `type: child, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
 		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
-		if ( opts.name ) t += `, name: ${ opts.name }`
+		if ( opts.name != null ) t += `, name: ${ opts.name }`
 		sendQueue.push( t )
 		scheduleProcessing()
 	}
 
 	function kill ( name ) {
 		let t = `type: kill, date_ms: ${ Date.now() }, ack: ${ ack++ }`
-		if ( name ) t += `, name: ${ name }`
+		if ( name != null ) t += `, name: ${ name }`
 		sendQueue.push( t )
 		scheduleProcessing()
 	}
