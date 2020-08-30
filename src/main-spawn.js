@@ -128,7 +128,30 @@ async function update_pids ()
 		}
 	}
 
-	// attempt to kill any children that should be dead
+	let main_parent_has_died = !alive[ main_parent ]
+
+	if ( _running && main_parent_has_died ) {
+		_running = false
+		log( 'main parent has died' )
+		doomAllChildren()
+	}
+
+	if ( _running ) {
+		for ( let pid in parents ) {
+			if ( !alive[ pid ] ) {
+				const name = parents[ pid ].name
+				if ( name != null ) {
+					doomChildrenByName( name )
+				} else {
+					doomAllChildren()
+				}
+				log( 'removing dead parent: ' + pid )
+				delete parents[ pid ]
+			}
+		}
+	}
+
+	// attempt to kill all doomed (should_be_killed) children
 	for ( let pid in children ) {
 		const child = children[ pid ]
 
@@ -141,28 +164,6 @@ async function update_pids ()
 			if ( !_running || child.should_be_killed ) {
 				await killChild( pid )
 			}
-		}
-	}
-
-	let main_parent_has_died = !alive[ main_parent ]
-	let parents_have_died = false
-	for ( let pid in parents ) {
-		if ( !alive[ pid ] ) {
-			log( 'removing dead parent: ' + pid )
-			parents_have_died = true
-			delete parents[ pid ]
-		}
-	}
-
-	if ( _running ) {
-		if ( main_parent_has_died ) {
-			log( 'main parent has died' )
-			_running = false
-			_time_of_death = Date.now()
-		}
-
-		if ( main_parent_has_died || parents_have_died ) {
-			await killAllChildren()
 		}
 	}
 }
@@ -211,12 +212,23 @@ async function killChild ( pid, signal )
 	} )
 }
 
-async function killAllChildren ()
+function doomAllChildren ()
 {
 	for ( let pid in children ) {
 		const child = children[ pid ]
-		let signal = 'SIGKILL'
-		await killChild( pid, signal )
+		child.should_be_killed = true
+		log( 'doomed child, pid: ' + pid )
+	}
+}
+
+function doomChildrenByName ( name )
+{
+	for ( let pid in children ) {
+		const child = children[ pid ]
+		if ( name != null && child.name == name ) {
+			child.should_be_killed = true
+			log( 'doomed child, pid: ' + pid )
+		}
 	}
 }
 
@@ -296,23 +308,26 @@ function processChildMessage ( message ) {
 async function processKillMessage ( message ) {
 	log( 'processing kill message' )
 
-	const date_ms = Number( message.date_ms )
 	const name = message.name
 
 	for ( let pid in children ) {
 		const child = children[ pid ]
 
-		// skip child if name is specified but doesn't match
-		if ( name != null && child.name != name ) {
-			log( 'kill command skipping child: name did not match' )
+		const should_kill_child = ( child.ack <= message.ack )
+		if ( !should_kill_child ) {
+			log( 'kill command skipping child: ack is higher' )
 			continue
-		} else {} // go on to kill all children if no name was specified
+		}
 
-		// kill all children that existed when the kill command was given
-		if ( child.ack < message.ack ) {
+		if ( name == null ) {
+			// kill children regardless of name if no name is given
 			await killChild( pid )
 		} else {
-			log( 'kill command skipping child: date_ms is higher' )
+			if ( child.name == name ) {
+				await killChild( pid )
+			} else {
+				log( 'kill command skipping child: name did not match' )
+			}
 		}
 	}
 }
