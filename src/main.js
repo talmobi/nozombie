@@ -20,8 +20,8 @@ Object.keys( process.env ).forEach(
 module.exports = function nozombie ( opts ) {
 	let sendQueue = []
 
-	const tempfile = tempy.file()
-	const logfile = tempfile + '-debug.log'
+	const tempfile = tempy.file() // main file to communicate with subprocess
+	const logfile = tempfile + '-debug.log' // only used/created when debugging
 
 	if ( !!_envs[ 'debug_nozombie' ] ) {
 		console.log( 'tempfile: ' + tempfile )
