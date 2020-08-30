@@ -321,24 +321,6 @@ test( 'ttl, time to live', async function ( t ) {
 		'all spawns init OK and child1 killed by ttl early'
 	)
 
-	await sleep( 3000 )
-
-	t.deepEqual(
-		buffer.slice().sort().map( line => line.trim() ),
-		[
-			'type: init, name: child1, timeout: 3000',
-			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 3000',
-			'type: init, name: child4, timeout: 12000',
-			'type: init, name: child5, timeout: 12000',
-			'type: done, name: child3',
-			'child1 exit',
-			'child3 exit',
-			'child4 exit',
-		].sort(),
-		'child3 completed and exited before ttl, but child4 only exited OK'
-	)
-
 	await sleep( 5000 )
 
 	t.deepEqual(
