@@ -67,13 +67,14 @@ module.exports = function nozombie ( opts ) {
 
 	function addParent ( opts ) {
 		if ( typeof opts !== 'object' ) {
-			// normalize pid
-			const n = Number( opts )
-			if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts )
 			opts = {
-				pid: n
+				pid: opts
 			}
 		}
+
+		// normalize pid
+		const n = Number( opts.pid )
+		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid parent pid: ' + opts.pid )
 
 		let t = `type: parent, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
 		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
@@ -84,13 +85,14 @@ module.exports = function nozombie ( opts ) {
 
 	function addChild ( opts ) {
 		if ( typeof opts !== 'object' ) {
-			// normalize pid
-			const n = Number( opts )
-			if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts )
 			opts = {
-				pid: n
+				pid: opts
 			}
 		}
+
+		// normalize pid
+		const n = Number( opts.pid )
+		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts.pid )
 
 		let t = `type: child, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
 		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
