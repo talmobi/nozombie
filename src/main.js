@@ -65,17 +65,26 @@ module.exports = function nozombie ( opts ) {
 	// see: https://devdocs.io/node~10_lts/child_process#child_process_options_detached
 	spawn.unref() // make parent (this process) not wait for child before exiting
 
-	function addParent ( pid ) {
-		// normalize pid
-		const n = Number( pid )
-		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid parent pid: ' + pid )
+	function addParent ( opts ) {
+		if ( typeof opts !== 'object' ) {
+			// normalize pid
+			const n = Number( opts )
+			if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts )
+			opts = {
+				pid: n
+			}
+		}
 
-		sendQueue.push( `type: parent, pid: ${ n }, date_ms: ${ Date.now() }, ack: ${ ack++ }` )
+		let t = `type: parent, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
+		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
+		if ( opts.name ) t += `, name: ${ opts.name }`
+		sendQueue.push( t )
 		scheduleProcessing()
 	}
 
 	function addChild ( opts ) {
 		if ( typeof opts !== 'object' ) {
+			// normalize pid
 			const n = Number( opts )
 			if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts )
 			opts = {

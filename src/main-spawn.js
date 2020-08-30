@@ -261,6 +261,7 @@ function processParentMessage ( message ) {
 	const obj = parents[ pid ] = { pid: pid }
 	obj.date_ms = Number( message.date_ms )
 	obj.ack = Number( message.ack )
+	obj.name = String( message.name )
 	log( 'added parent: ' + pid )
 }
 
