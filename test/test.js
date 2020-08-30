@@ -122,7 +122,7 @@ test( 'basic usage', async function ( t ) {
 	)
 } )
 
-test( 'namespaces', async function ( t ) {
+test( 'name, namespaces', async function ( t ) {
 	t.timeoutAfter( 1000 * 15 )
 
 	const nz = nozombie()
@@ -215,5 +215,117 @@ test( 'namespaces', async function ( t ) {
 			'child5 exit',
 		].sort(),
 		'children killed by name'
+	)
+} )
+
+test( 'ttl, time to live', async function ( t ) {
+	t.timeoutAfter( 1000 * 25 )
+
+	const nz = nozombie()
+	nz.spawn.on( 'exit', function () {
+		t.plan( 4 )
+		t.pass( 'nozombie exited OK' )
+	} )
+
+	const buffer = []
+	const childProcess1 = spawn( 'child1', 1000 * 3, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 3, buffer )
+	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
+	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
+
+	nz.addChild( { pid: childProcess1.pid, name: 'whale', ttl: 0 } )
+	nz.addChild( { pid: childProcess2.pid, name: 'whale' } )
+	nz.addChild( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 5  } )
+	nz.addChild( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 5 } )
+	nz.addChild( { pid: childProcess5.pid, name: 'whale' } )
+
+	childProcess1.on( 'exit', function () {
+		buffer.push( 'child1 exit' )
+	} )
+	childProcess2.on( 'exit', function () {
+		buffer.push( 'child2 exit' )
+	} )
+	childProcess3.on( 'exit', function () {
+		buffer.push( 'child3 exit' )
+	} )
+	childProcess4.on( 'exit', function () {
+		buffer.push( 'child4 exit' )
+	} )
+	childProcess5.on( 'exit', function () {
+		buffer.push( 'child5 exit' )
+	} )
+
+	await sleep( 2500 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
+			'child1 exit',
+		].sort(),
+		'all spawns init OK and child1 killed by ttl early'
+	)
+
+	await sleep( 3000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
+			'type: done, name: child3',
+			'child1 exit',
+			'child3 exit',
+			'child4 exit',
+		].sort(),
+		'child3 completed and exited before ttl, but child4 only exited OK'
+	)
+
+	await sleep( 5000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
+			'type: done, name: child3',
+			'child1 exit',
+			'child3 exit',
+			'child4 exit',
+		].sort(),
+		'more children killed by ttl'
+	)
+
+	await sleep( 5000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 3000',
+			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child3, timeout: 3000',
+			'type: init, name: child4, timeout: 12000',
+			'type: init, name: child5, timeout: 12000',
+			'type: done, name: child3',
+			'type: done, name: child2',
+			'type: done, name: child5',
+			'child1 exit',
+			'child3 exit',
+			'child4 exit',
+			'child2 exit',
+			'child5 exit',
+		].sort(),
+		'last non-ttl completed'
 	)
 } )
