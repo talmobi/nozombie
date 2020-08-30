@@ -17,7 +17,42 @@ Object.keys( process.env ).forEach(
 	}
 )
 
-module.exports = function nozombie ( opts ) {
+module.exports = nozombie
+module.exports.spawn = function ( opts, disable_warning ) {
+	if ( !disable_warning ) {
+		console.log(`
+			nozombie: warning
+			You should probably not be using the nozombie.spawn() function.
+			Use nozombie() instead to spawn a shared global subprocess for you application process.
+		`)
+	}
+
+	return nozombieFactory( opts )
+}
+
+let globalInstance // you should only need 1 per process
+function nozombie ( opts ) {
+	if ( opts ) {
+		throw new Error( 'nozombie() error: unsupported arguments -- did you mean to use nozombie.spawn() ?' )
+	}
+
+	if ( !globalInstance ) {
+		globalInstance = nozombieFactory()
+	}
+
+	return globalInstance
+}
+
+/*
+ * Spawns a subprocess to track parent pid and supplied children pids.
+ * You should only need one of these per parent/node process/application.
+ */
+function nozombieFactory ( opts ) {
+	opts = opts || {}
+	if ( typeof opts !== 'object' ) {
+		throw new Error( 'nozombieFactory() invalid options given' )
+	}
+
 	let sendQueue = []
 
 	const tempfile = tempy.file() // main file to communicate with subprocess
@@ -31,8 +66,13 @@ module.exports = function nozombie ( opts ) {
 	let write_buffer = ''
 	let ack = 1
 
+	const main_parent_pid = Number( opts.main_parent_pid || process.pid )
+	if ( typeof main_parent_pid !== 'number' || Number.isNaN( main_parent_pid ) ) {
+		throw new Error( 'nozombieFactory() invalid options.parent pid given' )
+	}
+
 	fs.writeFileSync( tempfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
-	sendQueue.push( `// started by pid: ${ process.pid }, date: ${ Date.now().toLocaleString() }` )
+	sendQueue.push( `// started by pid: ${ process.pid  }, main_parent_pid: ${ main_parent_pid }, date: ${ Date.now().toLocaleString() }` )
 	scheduleProcessing()
 
 	const nodeBinPath = process.execPath
@@ -42,7 +82,7 @@ module.exports = function nozombie ( opts ) {
 		nodeBinPath,
 		[
 			path.join( __dirname, './main-spawn.js' ),
-			process.pid, // main parent pid
+			main_parent_pid, // main parent pid
 			tempfile,
 			logfile,
 			!!_envs[ 'debug_nozombie' ],
