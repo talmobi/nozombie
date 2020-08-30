@@ -254,7 +254,7 @@ async function processKillMessage ( message ) {
 	log( 'processing kill message' )
 
 	const date_ms = Number( message.date_ms )
-	const name = message.name || ''
+	const name = message.name
 
 	for ( let pid in children ) {
 		const child = children[ pid ]
