@@ -215,7 +215,9 @@ function processParentMessage ( message ) {
 
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'parent pid error: ' + message.pid )
-	parents[ pid ] = { pid: pid, date_ms: Date.now() }
+	const obj = parents[ pid ] = { pid: pid }
+	obj.date_ms = Number( message.date_ms )
+	obj.ack = Number( message.ack )
 	log( 'added parent: ' + pid )
 }
 
@@ -224,8 +226,11 @@ function processChildMessage ( message ) {
 
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'child pid error: ' + message.pid )
-	children[ pid ] = { pid: pid, date_ms: Number( message.date_ms ) }
-	if ( message.name != null ) children[ pid ].name = message.name
+	const obj = children[ pid ] = { pid: pid }
+	obj.date_ms = Number( message.date_ms )
+	obj.ttl_ms = Number( message.ttl_ms )
+	obj.ack = Number( message.ack )
+	obj.name = String( message.name )
 	log( 'added child: ' + pid )
 
 	const date_ms = Number( message.date_ms )
@@ -258,10 +263,10 @@ async function processKillMessage ( message ) {
 		if ( name != null && child.name != name ) {
 			log( 'kill command skipping child: name did not match' )
 			continue
-		}
+		} else {} // go on to kill all children if no name was specified
 
 		// kill all children that existed when the kill command was given
-		if ( child.date_ms < date_ms ) {
+		if ( child.ack < message.ack ) {
 			child.should_be_killed = true
 			await kill( pid )
 		} else {
