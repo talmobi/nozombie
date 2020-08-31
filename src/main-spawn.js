@@ -323,7 +323,7 @@ async function processKillMessage ( message ) {
 			// kill children regardless of name if no name is given
 			await killChild( pid )
 		} else {
-			if ( child.name == name ) {
+			if ( child.name && child.name.indexOf( name ) === 0 ) {
 				await killChild( pid )
 			} else {
 				log( 'kill command skipping child: name did not match' )
