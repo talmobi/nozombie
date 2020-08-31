@@ -39,7 +39,7 @@ async function sleep ( ms ) {
 const disable_warnings = true
 
 test( 'normal singleton use case', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 3 )
 
 	const nz = nozombie()
@@ -80,7 +80,7 @@ test( 'normal singleton use case', async function ( t ) {
 	}
 
 	async function finish () {
-		await sleep( 2500 ) // wait for ttl to kill
+		await sleep( 3500 ) // wait for ttl to kill
 
 		t.deepEqual(
 			buffer.slice().sort().map( line => line.trim() ),
@@ -98,16 +98,16 @@ test( 'normal singleton use case', async function ( t ) {
 } )
 
 test( 'normal ttl use case', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 4 )
 
 	const nz = nozombie()
 
 	const buffer = []
 
-	const childProcess1 = spawn( 'child1', 1000 * 12, buffer )
-	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
-	const childProcess3 = spawn( 'child3', 1000 * 12, buffer )
+	const childProcess1 = spawn( 'child1', 1000 * 13, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 13, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 13, buffer )
 
 	childProcess1.on( 'exit', function () {
 		buffer.push( 'child1 exit' )
@@ -128,9 +128,9 @@ test( 'normal ttl use case', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 12000',
-			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 12000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
 		].sort(),
 		'all spawns init OK'
 	)
@@ -140,22 +140,22 @@ test( 'normal ttl use case', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 12000',
-			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 12000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
 			'child2 exit', // first ttl expired
 		].sort(),
 		'first ttl expired'
 	)
 
-	await sleep( 4000 )
+	await sleep( 5000 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 12000',
-			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 12000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
 			'child2 exit',
 			'child3 exit', // second ttl expired
 		].sort(),
@@ -167,9 +167,9 @@ test( 'normal ttl use case', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 12000',
-			'type: init, name: child2, timeout: 12000',
-			'type: init, name: child3, timeout: 12000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
 			'child2 exit',
 			'child3 exit',
 			'type: done, name: child1', // first child finished
@@ -180,7 +180,7 @@ test( 'normal ttl use case', async function ( t ) {
 } )
 
 test( 'kill all children when main parent dies', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 4 )
 
 	const mainParentProcess = spawn( 'parent', 1000 * 15 )
@@ -263,7 +263,7 @@ test( 'kill all children when main parent dies', async function ( t ) {
 } )
 
 test( 'kill children when parent dies', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 7 )
 
 	const mainParentProcess = spawn( 'parent', 1000 * 15 )
@@ -449,7 +449,7 @@ test( 'kill named children when named parent dies', async function ( t ) {
 } )
 
 test( 'kill children but not children added after the call', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 3 )
 
 	const buffer = []
@@ -509,7 +509,7 @@ test( 'kill children but not children added after the call', async function ( t 
 } )
 
 test( 'name, namespaces', async function ( t ) {
-	t.timeoutAfter( 1000 * 15 )
+	t.timeoutAfter( 1000 * 20 )
 	t.plan( 4 )
 
 	const parentProcess = spawn( 'parent', 1000 * 15 )
