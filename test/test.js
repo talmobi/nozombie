@@ -48,10 +48,10 @@ test( 'normal shared module use case', async function ( t ) {
 
 	const buffer = []
 
-	const childProcess1 = spawn( 'child1', 1000 * 10, buffer )
-	const childProcess2 = spawn( 'child2', 1000 * 10, buffer )
+	const childProcess1 = spawn( 'child1', 1000 * 13, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 13, buffer )
 	const childProcess3 = spawn( 'child3', 1000 * 13, buffer )
-	const childProcess4 = spawn( 'child4', 1000 * 10, buffer )
+	const childProcess4 = spawn( 'child4', 1000 * 13, buffer )
 
 	childProcess1.on( 'exit', function () {
 		buffer.push( 'child1 exit' )
@@ -81,10 +81,10 @@ test( 'normal shared module use case', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 10000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
 			'type: init, name: child3, timeout: 13000',
-			'type: init, name: child4, timeout: 10000',
+			'type: init, name: child4, timeout: 13000',
 		].sort(),
 		'all spawns init OK'
 	)
@@ -94,10 +94,10 @@ test( 'normal shared module use case', async function ( t ) {
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 10000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
 			'type: init, name: child3, timeout: 13000',
-			'type: init, name: child4, timeout: 10000',
+			'type: init, name: child4, timeout: 13000',
 			'child2 exit', // first ttl expired
 		].sort(),
 		'first ttl expired'
@@ -105,15 +105,15 @@ test( 'normal shared module use case', async function ( t ) {
 
 	nz1.kill() // child1 should never finish
 
-	await sleep( 5000 )
+	await sleep( 7000 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
-			'type: init, name: child1, timeout: 10000',
-			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
 			'type: init, name: child3, timeout: 13000',
-			'type: init, name: child4, timeout: 10000',
+			'type: init, name: child4, timeout: 13000',
 			'child2 exit', // first ttl expired
 			'child1 exit', // first child killed by nz1.kill() call
 
@@ -133,6 +133,7 @@ test( 'normal singleton use case', async function ( t ) {
 	t.plan( 3 )
 
 	const nz = nozombie()
+	nz.kill()
 
 	const buffer = []
 	let last_child_buffer
@@ -144,7 +145,7 @@ test( 'normal singleton use case', async function ( t ) {
 			const child_buffer = []
 			const childName = 'child' + counter
 			last_child_buffer = child_buffer
-			const child = spawn( childName, 1000 * 9, buffer, child_buffer )
+			const child = spawn( childName, 1000 * 15, buffer, child_buffer )
 			nz.kill( 'highlander' )
 			nz.add( { pid: child.pid, name: 'highlander', ttl: 1000 * 5 } )
 
@@ -158,7 +159,7 @@ test( 'normal singleton use case', async function ( t ) {
 
 			t.equal(
 				child_buffer[ child_buffer.length - 1 ].trim(),
-				`type: init, name: ${ childName }, timeout: 9000`,
+				`type: init, name: ${ childName }, timeout: 15000`,
 				`${ childName } init`
 			)
 
@@ -175,12 +176,12 @@ test( 'normal singleton use case', async function ( t ) {
 		t.deepEqual(
 			buffer.slice().sort().map( line => line.trim() ),
 			[
-				'type: init, name: child1, timeout: 9000',
-				'type: init, name: child2, timeout: 9000',
+				'type: init, name: child1, timeout: 15000',
+				'type: init, name: child2, timeout: 15000',
 				'child1 exited',
 				'child2 exited'
 			].sort(),
-			'all spawns init OK'
+			'all exited OK'
 		)
 
 		t.end()
