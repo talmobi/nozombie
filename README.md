@@ -1,5 +1,8 @@
 [![npm](https://img.shields.io/npm/v/nozombie.svg?maxAge=3600&style=flat-square)](https://www.npmjs.com/package/nozombie)
 [![npm](https://img.shields.io/npm/l/nozombie.svg?maxAge=3600&style=flat-square)](https://github.com/talmobi/nozombie/blob/master/LICENSE)
+![mac](https://github.com/talmobi/nozombie/workflows/mac/badge.svg)
+![ubuntu](https://github.com/talmobi/nozombie/workflows/ubuntu/badge.svg)
+![windows](https://github.com/talmobi/nozombie/workflows/windows/badge.svg)
 
 #  nozombie
 Easy pid tracking and killing. No more zombie processes left alive!
