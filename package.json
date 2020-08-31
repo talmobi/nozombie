@@ -4,9 +4,12 @@
   "description": "track pocesses and make sure they die when they are supposed to",
   "main": "src/main.js",
   "files": [
-    "src/main.js"
+    "src/main.js",
+    "src/main-spawn.js",
+    "src/util.js"
   ],
   "scripts": {
+    "prepublishOnly": "npm test",
     "test": "node test/test.js"
   },
   "keywords": [
