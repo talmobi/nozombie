@@ -684,10 +684,10 @@ test( 'name, namespaces', async function ( t ) {
 
 	const buffer = []
 	const childProcess1 = spawn( 'child1', 1000 * 3, buffer )
-	const childProcess2 = spawn( 'child2', 1000 * 12, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 16, buffer )
 	const childProcess3 = spawn( 'child3', 1000 * 3, buffer )
-	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
-	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
+	const childProcess4 = spawn( 'child4', 1000 * 16, buffer )
+	const childProcess5 = spawn( 'child5', 1000 * 16, buffer )
 
 	nz.add( { pid: childProcess1.pid, name: 'whale' } )
 	nz.add( { pid: childProcess2.pid, name: 'whale' } )
@@ -717,10 +717,10 @@ test( 'name, namespaces', async function ( t ) {
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: child1, timeout: 3000',
-			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child2, timeout: 16000',
 			'type: init, name: child3, timeout: 3000',
-			'type: init, name: child4, timeout: 12000',
-			'type: init, name: child5, timeout: 12000',
+			'type: init, name: child4, timeout: 16000',
+			'type: init, name: child5, timeout: 16000',
 		].sort(),
 		'all spawns init OK'
 	)
@@ -731,10 +731,10 @@ test( 'name, namespaces', async function ( t ) {
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: child1, timeout: 3000',
-			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child2, timeout: 16000',
 			'type: init, name: child3, timeout: 3000',
-			'type: init, name: child4, timeout: 12000',
-			'type: init, name: child5, timeout: 12000',
+			'type: init, name: child4, timeout: 16000',
+			'type: init, name: child5, timeout: 16000',
 			'type: done, name: child1',
 			'type: done, name: child3',
 			'child1 exit',
@@ -747,16 +747,16 @@ test( 'name, namespaces', async function ( t ) {
 	nz.kill( 'giraffe' )
 	nz.kill( 'whale' )
 
-	await sleep( 5000 )
+	await sleep( 6000 )
 
 	t.deepEqual(
 		buffer.slice().sort().map( line => line.trim() ),
 		[
 			'type: init, name: child1, timeout: 3000',
-			'type: init, name: child2, timeout: 12000',
+			'type: init, name: child2, timeout: 16000',
 			'type: init, name: child3, timeout: 3000',
-			'type: init, name: child4, timeout: 12000',
-			'type: init, name: child5, timeout: 12000',
+			'type: init, name: child4, timeout: 16000',
+			'type: init, name: child5, timeout: 16000',
 			'type: done, name: child1',
 			'type: done, name: child3',
 			'child1 exit',
