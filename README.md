@@ -97,6 +97,10 @@ Killing attempts happen about every ~1second when a children is doomed to death.
 The subprocess reads the relevent pid's from a shared temporary file the main parent process creates before spawning the subprocess.
 The subprocess will clean up this temporary file before it kills itself.
 
+#### NOTE!
+Killing children isn't guaranteed. When a child is doomed, it is usually killed within a few seconds.
+If a child is not killed by its 10th attempt (within ~10-15 seconds), it will be considered immortal, ignored and removed silently.
+
 ## API
 ```javascript
 const nozombie = require( 'nozombie' )
