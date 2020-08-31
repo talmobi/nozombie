@@ -6,6 +6,20 @@ const path = require( 'path' )
 
 const util = require( './util.js' )
 
+function uuid () {
+	uuid.counter = ( uuid.counter || 0 )
+	const n = ++uuid.counter
+
+	const unix_time = Math.floor( Date.now() / 1000 )
+
+	return (
+		'nz' +
+		Math.random().toString( 16 ).slice( 4, 10 ) +
+		unix_time.toString( 16 ).slice( -6 ) +
+		String( n )
+	)
+}
+
 const _envs = {}
 Object.keys( process.env ).forEach(
 	function ( key ) {
@@ -31,16 +45,18 @@ module.exports.spawn = function ( opts, disable_warning ) {
 }
 
 let globalInstance // you should only need 1 per process
-function nozombie ( opts ) {
-	if ( opts ) {
-		throw new Error( 'nozombie() error: unsupported arguments -- did you mean to use nozombie.spawn() ?' )
+
+function nozombie ( namespace ) {
+	if ( namespace && typeof namespace !== 'string' ) {
+		throw new TypeError( 'nozombie() error: namespace should be an application wide unique name' )
 	}
 
 	if ( !globalInstance ) {
 		globalInstance = nozombieFactory()
 	}
 
-	return globalInstance
+	// return a namespace
+	return globalInstance.createNamespace( namespace || uuid() )
 }
 
 /*
@@ -176,12 +192,40 @@ function nozombieFactory ( opts ) {
 		}, ms || 0 )
 	}
 
+	function createNamespace ( namespace ) {
+		function _addParent ( opts ) {
+			if ( typeof opts !== 'object' ) opts = { pid: opts }
+			opts.name = opts.name || ''
+			opts.name = namespace + opts.name
+			addParent( opts )
+		}
+
+		function _addChild ( opts ) {
+			if ( typeof opts !== 'object' ) opts = { pid: opts }
+			opts.name = opts.name || ''
+			opts.name = namespace + opts.name
+			addChild( opts )
+		}
+
+		function _kill ( name ) {
+			name = name || ''
+			name = namespace + name
+			kill( name )
+		}
+
+		return {
+			addParent: _addParent,
+			add: _addChild,
+			kill: _kill
+		}
+	}
+
 	return {
-		addParent,
-		addChild,
-		add: addChild,
-		kill,
+		createNamespace,
 		tempfile,
-		spawn
+		spawn,
+		addParent,
+		add: addChild,
+		kill
 	}
 }
