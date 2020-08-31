@@ -1,7 +1,6 @@
 const fs = require( 'fs' )
 const psList = require( 'ps-list' )
 const treeKill = require( 'tree-kill' )
-const tempy = require( 'tempy' )
 
 const util = require( './util.js' )
 
@@ -29,7 +28,7 @@ const WAIT_BEFORE_SUICIDE_MS = 1000 * 15
 const MAX_CHILD_KILL_ATTEMPTS = 10
 
 // lines to skip because they have already been processed
-let ack = 0
+let global_ack = 0
 
 let _running = true
 let _time_of_death // time when main parent dies and we go into exit/cleanup mode
@@ -67,35 +66,27 @@ async function get_messages ()
 		log( 'index: ' + i )
 		const line = ( lines[ i ] || '' ).trim()
 		if ( !line ) continue
-		if ( line.indexOf( '//' ) === 0 ) continue
+		if ( line.indexOf( '{' ) !== 0 ) continue
 
 		log( 'line: ' + line )
 
-		const msg = {}
-		line
-		.split( ',' )
-		.forEach( function ( key_value_pair ) {
-			const pair = key_value_pair.split( ':' )
-			if ( !pair[ 1 ] ) return
-			const key = pair[ 0 ].trim()
-			const value = pair[ 1 ].trim()
-			msg[ key ] = value
-		} )
+		const msg = JSON.parse( line )
+		log( JSON.stringify( msg ) )
 
 		if ( !msg.ack ) {
 			log( 'no ack found' )
 			continue
 		}
 
-		if ( msg.ack <= ack ) {
+		if ( msg.ack <= global_ack ) {
 			// already processed
 			continue
 		} else {
-			ack = msg.ack
-			log( 'new ack: ' + ack )
+			global_ack = msg.ack
+			log( 'new ack: ' +  global_ack )
 		}
 
-		log( JSON.stringify( msg ) )
+		log( 'adding message' )
 		messages.push( msg )
 	}
 	log( 'messages processed?' )
@@ -271,10 +262,13 @@ function processParentMessage ( message ) {
 
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'parent pid error: ' + message.pid )
+
 	const obj = parents[ pid ] = { pid: pid }
 	obj.date_ms = Number( message.date_ms )
 	obj.ack = Number( message.ack )
-	obj.name = String( message.name )
+
+	if ( message.name != null ) obj.name = String( message.name )
+
 	log( 'added parent: ' + pid )
 }
 
@@ -283,25 +277,30 @@ function processChildMessage ( message ) {
 
 	const pid = Number( message.pid )
 	if ( typeof pid !== 'number' || Number.isNaN( pid ) ) return log( 'child pid error: ' + message.pid )
+
 	const obj = children[ pid ] = { pid: pid }
 	obj.date_ms = Number( message.date_ms )
-	obj.ttl_ms = Number( message.ttl_ms )
 	obj.ack = Number( message.ack )
-	obj.name = String( message.name )
+
+	if ( message.ttl_ms != null ) obj.ttl_ms = Number( message.ttl_ms )
+	if ( message.name != null ) obj.name = String( message.name )
+
 	log( 'added child: ' + pid )
 
-	const date_ms = Number( message.date_ms )
-	const ttl_ms = Number( message.ttl_ms )
+	const date_ms = obj.date_ms
+	const ttl_ms = obj.ttl_ms
 
 	if ( ttl_ms >= 0 ) {
-		const time_of_death_ms = ( date_ms + ttl_ms )
+		const time_of_death_ms = ( date_ms + ttl_ms ) - INTERVAL_PID_POLL_MS
 		const time_until_death_ms = ( time_of_death_ms - Date.now() )
 		const timeout_ms = time_until_death_ms <= 0 ? 0 : time_until_death_ms
+
+		log( 'setting child ttl [ ' + pid + ' ] ttl: ' + timeout_ms )
 
 		// clear/update previous ttl
 		clearTimeout( ttls[ pid ] )
 		ttls[ pid ] = setTimeout( function () {
-			if ( children[ pid ] ) children[ pid ].should_be_killed = true
+			obj.should_be_killed = true
 		}, timeout_ms )
 	}
 }

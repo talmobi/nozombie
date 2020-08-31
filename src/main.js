@@ -52,11 +52,11 @@ function nozombie ( namespace ) {
 	}
 
 	if ( !globalInstance ) {
-		globalInstance = nozombieFactory()
+		globalInstance = nozombieFactory( { main_parent_pid: process.pid } )
 	}
 
 	// return a namespace
-	return globalInstance.createNamespace( namespace || uuid() )
+	return globalInstance.createNamespace( namespace || ( uuid() + ':' ) )
 }
 
 /*
@@ -69,7 +69,8 @@ function nozombieFactory ( opts ) {
 		throw new Error( 'nozombieFactory() invalid options given' )
 	}
 
-	let sendQueue = []
+	let messageBuffer = [] // keep recent messages in memory for writing
+	const sendQueue = []
 
 	const tempfile = tempy.file() // main file to communicate with subprocess
 	const logfile = tempfile + '-debug.log' // only used/created when debugging
@@ -87,9 +88,12 @@ function nozombieFactory ( opts ) {
 		throw new Error( 'nozombieFactory() invalid options.main_parent_pid pid given' )
 	}
 
-	fs.writeFileSync( tempfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
-	sendQueue.push( `// started by pid: ${ process.pid  }, main_parent_pid: ${ main_parent_pid }, date: ${ Date.now().toLocaleString() }` )
-	scheduleProcessing()
+	const headerText = (
+		'https://github.com/talmobi/nozombie' + '\n' +
+		`started by pid: ${ process.pid }, main_parent_pid: ${ main_parent_pid }, date: ${ Date.now().toLocaleString() }` + '\n'
+	)
+
+	fs.writeFileSync( tempfile, headerText, 'utf8' )
 
 	const nodeBinPath = process.execPath
 
@@ -132,10 +136,16 @@ function nozombieFactory ( opts ) {
 		const n = Number( opts.pid )
 		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid parent pid: ' + opts.pid )
 
-		let t = `type: parent, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
-		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
-		if ( opts.name != null ) t += `, name: ${ opts.name }`
-		sendQueue.push( t )
+		const msg = {
+			type: 'parent',
+			pid: opts.pid,
+			date_ms: Date.now(),
+			ack: ack++
+		}
+
+		if ( opts.name != null ) msg.name = opts.name
+
+		sendQueue.push( msg )
 		scheduleProcessing()
 	}
 
@@ -150,46 +160,69 @@ function nozombieFactory ( opts ) {
 		const n = Number( opts.pid )
 		if ( n <= 0 || Number.isNaN( n ) ) throw new TypeError( 'nozombie invalid child pid: ' + opts.pid )
 
-		let t = `type: child, pid: ${ opts.pid }, date_ms: ${ Date.now() }, ack: ${ ack++ }`
-		if ( opts.ttl >= 0 ) t += `, ttl_ms: ${ opts.ttl }`
-		if ( opts.name != null ) t += `, name: ${ opts.name }`
-		sendQueue.push( t )
+		const msg = {
+			type: 'child',
+			pid: opts.pid,
+			date_ms: Date.now(),
+			ack: ack++
+		}
+
+		if ( opts.ttl >= 0 ) msg.ttl_ms = opts.ttl
+		if ( opts.name != null ) msg.name = opts.name
+
+		sendQueue.push( msg )
 		scheduleProcessing()
 	}
 
 	function kill ( name ) {
-		let t = `type: kill, date_ms: ${ Date.now() }, ack: ${ ack++ }`
-		if ( name != null ) t += `, name: ${ name }`
-		sendQueue.push( t )
+		const msg = {
+			type: 'kill',
+			date_ms: Date.now(),
+			ack: ack++
+		}
+
+		if ( name != null ) msg.name = name
+
+		sendQueue.push( msg )
 		scheduleProcessing()
 	}
 
 	async function processSendQueue () {
 		return new Promise( async function ( resolve ) {
-			if ( sendQueue.length > 0 ) {
-				while ( sendQueue.length > 0 ) {
-					const line = sendQueue.shift() + '\n'
-					write_buffer += line
-				}
-
-				try {
-					await util.appendFile( tempfile, write_buffer )
-					write_buffer = ''
-				} catch ( err ) {
-					scheduleProcessing( 1000 )
-				}
-				resolve()
+			while ( sendQueue.length > 0 ) {
+				const msg = sendQueue.shift()
+				messageBuffer.push( msg )
 			}
+
+			const stale_time = Date.now() - 1000 * 15
+			messageBuffer = messageBuffer.filter( msg => msg.date_ms > stale_time )
+
+			write_buffer = headerText
+			messageBuffer.forEach( function ( msg ) {
+				const line = JSON.stringify( msg ) + '\n'
+				write_buffer += line
+			} )
+
+			if ( write_buffer !== '' ) {
+				try {
+					await util.writeFile( tempfile, write_buffer )
+					write_buffer = ''
+				} catch ( err ) { /* ignore */ }
+			}
+
+			resolve()
 		} )
 	}
 
 	function scheduleProcessing ( ms ) {
-		const timeout = processSendQueue.timeout
-		if ( timeout ) return
-		processSendQueue.timeout = setTimeout( async function () {
-			processSendQueue.timeout = undefined
-			await processSendQueue()
-		}, ms || 0 )
+		if ( sendQueue.length > 0 || write_buffer !== '' ) {
+			if ( processSendQueue.timeout ) return // already in progress
+			processSendQueue.timeout = setTimeout( async function () {
+				await processSendQueue()
+				processSendQueue.timeout = undefined
+				scheduleProcessing( 0 )
+			}, ms || 0 )
+		}
 	}
 
 	function createNamespace ( namespace ) {
