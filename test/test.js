@@ -619,11 +619,11 @@ test( 'name, namespaces', async function ( t ) {
 	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
 	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
 
-	nz.addChild( { pid: childProcess1.pid, name: 'whale' } )
-	nz.addChild( { pid: childProcess2.pid, name: 'whale' } )
-	nz.addChild( { pid: childProcess3.pid, name: 'giraffe' } )
-	nz.addChild( { pid: childProcess4.pid, name: 'giraffe' } )
-	nz.addChild( { pid: childProcess5.pid, name: 'whale' } )
+	nz.add( { pid: childProcess1.pid, name: 'whale' } )
+	nz.add( { pid: childProcess2.pid, name: 'whale' } )
+	nz.add( { pid: childProcess3.pid, name: 'giraffe' } )
+	nz.add( { pid: childProcess4.pid, name: 'giraffe' } )
+	nz.add( { pid: childProcess5.pid, name: 'whale' } )
 
 	childProcess1.on( 'exit', function () {
 		buffer.push( 'child1 exit' )
@@ -726,11 +726,11 @@ test( 'ttl, time to live', async function ( t ) {
 	const childProcess4 = spawn( 'child4', 1000 * 12, buffer )
 	const childProcess5 = spawn( 'child5', 1000 * 12, buffer )
 
-	nz.addChild( { pid: childProcess1.pid, name: 'whale', ttl: 3000 } )
-	nz.addChild( { pid: childProcess2.pid, name: 'whale' } )
-	nz.addChild( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 8  } )
-	nz.addChild( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 8 } )
-	nz.addChild( { pid: childProcess5.pid, name: 'whale' } )
+	nz.add( { pid: childProcess1.pid, name: 'whale', ttl: 3000 } )
+	nz.add( { pid: childProcess2.pid, name: 'whale' } )
+	nz.add( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 8  } )
+	nz.add( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 8 } )
+	nz.add( { pid: childProcess5.pid, name: 'whale' } )
 
 	childProcess1.on( 'exit', function () {
 		buffer.push( 'child1 exit' )
