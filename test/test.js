@@ -270,6 +270,75 @@ test( 'normal ttl use case', async function ( t ) {
 	)
 } )
 
+test( 'normal namespace use case', async function ( t ) {
+	t.timeoutAfter( 1000 * 20 )
+	t.plan( 3 )
+
+	const nz = nozombie()
+
+	const buffer = []
+
+	const childProcess1 = spawn( 'child1', 1000 * 13, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 13, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 13, buffer )
+
+	childProcess1.on( 'exit', function () {
+		buffer.push( 'child1 exit' )
+	} )
+	childProcess2.on( 'exit', function () {
+		buffer.push( 'child2 exit' )
+	} )
+	childProcess3.on( 'exit', function () {
+		buffer.push( 'child3 exit' )
+	} )
+
+	nz.add( { pid: childProcess1.pid, name: 'whale' } )
+	nz.add( { pid: childProcess2.pid } )
+	nz.add( { pid: childProcess3.pid, name: 'falcon' } )
+
+	await sleep( 2500 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
+		].sort(),
+		'all spawns init OK'
+	)
+
+	nz.kill( 'falcon' )
+	await sleep( 3000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
+			'child3 exit', // falcon killed
+		].sort(),
+		'falcon killed'
+	)
+
+	nz.kill() // kill all
+	await sleep( 3000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 13000',
+			'type: init, name: child2, timeout: 13000',
+			'type: init, name: child3, timeout: 13000',
+			'child1 exit', // whale also killed
+			'child2 exit',
+			'child3 exit', // second ttl expired
+		].sort(),
+		'all killed including whale'
+	)
+} )
+
 test( 'kill all children when main parent dies', async function ( t ) {
 	t.timeoutAfter( 1000 * 20 )
 	t.plan( 4 )
