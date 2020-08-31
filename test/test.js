@@ -38,6 +38,96 @@ async function sleep ( ms ) {
 
 const disable_warnings = true
 
+test( 'normal shared module use case', async function ( t ) {
+	t.timeoutAfter( 1000 * 20 )
+	t.plan( 3 )
+
+	const nz1 = nozombie()
+	const nz2 = nozombie()
+	const nz3 = nozombie()
+
+	const buffer = []
+
+	const childProcess1 = spawn( 'child1', 1000 * 10, buffer )
+	const childProcess2 = spawn( 'child2', 1000 * 10, buffer )
+	const childProcess3 = spawn( 'child3', 1000 * 13, buffer )
+	const childProcess4 = spawn( 'child4', 1000 * 10, buffer )
+
+	childProcess1.on( 'exit', function () {
+		buffer.push( 'child1 exit' )
+	} )
+	childProcess2.on( 'exit', function () {
+		buffer.push( 'child2 exit' )
+	} )
+	childProcess3.on( 'exit', function () {
+		buffer.push( 'child3 exit' )
+	} )
+	childProcess4.on( 'exit', function () {
+		buffer.push( 'child4 exit' )
+	} )
+
+	// first namespace
+	nz1.add( childProcess1.pid )
+	nz1.add( { pid: childProcess2.pid, ttl: 1000 * 5 } )
+
+	// second namespace
+	nz2.add( { pid: childProcess3.pid, ttl: 1000 * 9 } )
+	nz2.add( childProcess4.pid )
+
+	nz3.kill() // should do nothing
+
+	await sleep( 2500 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 10000',
+			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child3, timeout: 13000',
+			'type: init, name: child4, timeout: 10000',
+		].sort(),
+		'all spawns init OK'
+	)
+
+	await sleep( 5000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 10000',
+			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child3, timeout: 13000',
+			'type: init, name: child4, timeout: 10000',
+			'child2 exit', // first ttl expired
+		].sort(),
+		'first ttl expired'
+	)
+
+	nz1.kill() // child1 should never finish
+
+	await sleep( 5000 )
+
+	t.deepEqual(
+		buffer.slice().sort().map( line => line.trim() ),
+		[
+			'type: init, name: child1, timeout: 10000',
+			'type: init, name: child2, timeout: 10000',
+			'type: init, name: child3, timeout: 13000',
+			'type: init, name: child4, timeout: 10000',
+			'child2 exit', // first ttl expired
+			'child1 exit', // first child killed by nz1.kill() call
+
+			// child3 ttl expired
+			'child3 exit',
+
+			// child4 should complete and exit normally
+			'type: done, name: child4',
+			'child4 exit',
+		].sort(),
+		'nz1 children killed and child4 from nz2 completed'
+	)
+} )
+
 test( 'normal singleton use case', async function ( t ) {
 	t.timeoutAfter( 1000 * 20 )
 	t.plan( 3 )
