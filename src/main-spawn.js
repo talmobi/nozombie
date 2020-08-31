@@ -6,7 +6,7 @@ const tempy = require( 'tempy' )
 const util = require( './util.js' )
 
 const args = process.argv.slice( 2 )
-const main_parent = Number( args[ 0 ] ) // main parent pid
+const main_parent_pid = Number( args[ 0 ] ) // main parent pid
 const tempfile = String( args[ 1 ] ) // read commands from main parent from this file
 const logfile = String( args[ 2 ] ) // write debug logs to this file when debugging
 
@@ -23,7 +23,7 @@ const INTERVAL_PID_POLL_MS = 1000
 const INTERVAL_READ_POLL_MS = 200
 
 // time to kill children before exiting even if children are left alive
-// after the main_parent process has exited
+// after the main_parent_pid process has exited
 const WAIT_BEFORE_SUICIDE_MS = 1000 * 15
 
 const MAX_CHILD_KILL_ATTEMPTS = 10
@@ -35,7 +35,7 @@ let _running = true
 let _time_of_death // time when main parent dies and we go into exit/cleanup mode
 
 let parents = {} // if any parent pid dies, kill all children
-parents[ main_parent ] = { pid: main_parent, date_ms: Date.now() }
+parents[ main_parent_pid ] = { pid: main_parent_pid, date_ms: Date.now() }
 let children = {} // pids to kill if any parent dies
 const ttls = {} // time to live timeouts. kill pid if ttl expires
 
@@ -129,7 +129,7 @@ async function update_pids ()
 		}
 	}
 
-	let main_parent_has_died = !alive[ main_parent ]
+	let main_parent_has_died = !alive[ main_parent_pid ]
 
 	if ( _running && main_parent_has_died ) {
 		_running = false

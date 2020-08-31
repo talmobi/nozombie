@@ -68,7 +68,7 @@ function nozombieFactory ( opts ) {
 
 	const main_parent_pid = Number( opts.main_parent_pid || process.pid )
 	if ( typeof main_parent_pid !== 'number' || Number.isNaN( main_parent_pid ) ) {
-		throw new Error( 'nozombieFactory() invalid options.parent pid given' )
+		throw new Error( 'nozombieFactory() invalid options.main_parent_pid pid given' )
 	}
 
 	fs.writeFileSync( tempfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
