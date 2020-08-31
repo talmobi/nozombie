@@ -211,7 +211,7 @@ test( 'normal ttl use case', async function ( t ) {
 	} )
 
 	nz.add( childProcess1.pid )
-	nz.add( { pid: childProcess2.pid, ttl: 1000 * 5 } )
+	nz.add( { pid: childProcess2.pid, ttl: 1000 * 4 } )
 	nz.add( { pid: childProcess3.pid, ttl: 1000 * 9 } )
 
 	await sleep( 2500 )
