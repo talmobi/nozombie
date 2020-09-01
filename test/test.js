@@ -798,8 +798,8 @@ test( 'ttl, time to live', async function ( t ) {
 
 	nz.add( { pid: childProcess1.pid, name: 'whale', ttl: 3000 } )
 	nz.add( { pid: childProcess2.pid, name: 'whale' } )
-	nz.add( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 8  } )
-	nz.add( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 8 } )
+	nz.add( { pid: childProcess3.pid, name: 'giraffe', ttl: 1000 * 9  } )
+	nz.add( { pid: childProcess4.pid, name: 'giraffe', ttl: 1000 * 9 } )
 	nz.add( { pid: childProcess5.pid, name: 'whale' } )
 
 	childProcess1.on( 'exit', function () {
