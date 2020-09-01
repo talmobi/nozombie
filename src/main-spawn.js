@@ -30,8 +30,7 @@ const MAX_CHILD_KILL_ATTEMPTS = 10
 // lines to skip because they have already been processed
 let global_ack = 0
 
-let _running = true
-let _time_of_death // time when main parent dies and we go into exit/cleanup mode
+let _time_of_death = 0 // time when main parent dies and we go into exit/cleanup mode
 
 let parents = {} // if any parent pid dies, kill all children
 parents[ main_parent_pid ] = { pid: main_parent_pid, date_ms: Date.now() }
@@ -122,13 +121,13 @@ async function update_pids ()
 
 	let main_parent_has_died = !alive[ main_parent_pid ]
 
-	if ( _running && main_parent_has_died ) {
-		_running = false
+	if ( !_time_of_death && main_parent_has_died ) {
+		_time_of_death = Date.now()
 		log( 'main parent has died' )
 		doomAllChildren()
 	}
 
-	if ( _running ) {
+	if ( !_time_of_death ) {
 		for ( let pid in parents ) {
 			if ( !alive[ pid ] ) {
 				const name = parents[ pid ].name
@@ -153,7 +152,7 @@ async function update_pids ()
 			delete children[ pid ]
 			clearTimeout( ttls[ pid ] ) // clear ttl timeout if any
 		} else {
-			if ( !_running || child.should_be_killed ) {
+			if ( _time_of_death || child.should_be_killed ) {
 				await killChild( pid )
 			}
 		}
@@ -164,7 +163,7 @@ async function tick ()
 {
 	await update_pids()
 
-	if ( _running ) {
+	if ( !_time_of_death ) {
 		scheduleNextTick()
 	} else {
 		const delta = ( Date.now() - _time_of_death )
