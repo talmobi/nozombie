@@ -108,11 +108,18 @@ async function update_pids ()
 		alive[ pid ] = true
 	} )
 
-	// update list of children and remove pid's that have died we need to do
+	// update list of children and remove pid's that have died. We need to do
 	// this because process pid's are re-used and becomes available after a
 	// process dies. This will prevent re-killing unrelated children processes.
 	for ( let pid in children ) {
-		if ( !alive[ pid ] ) {
+		// init poll counter
+		children[ pid ].poll_counter = children[ pid ].poll_counter || 0
+
+		// pid may have been inserted after receiving the alive list, therefore
+		// do not delete it immediately the first time it is polled
+		const viable = children[ pid ].poll_counter++ > 0
+
+		if ( !alive[ pid ] && viable ) {
 			log( 'removing dead child: ' + pid )
 			delete children[ pid ]
 			clearTimeout( ttls[ pid ] ) // clear ttl timeout if any
@@ -129,7 +136,14 @@ async function update_pids ()
 
 	if ( !_time_of_death ) {
 		for ( let pid in parents ) {
-			if ( !alive[ pid ] ) {
+			// init poll counter
+			parents[ pid ].poll_counter = parents[ pid ].poll_counter || 0
+
+			// pid may have been inserted after receiving the alive list, therefore
+			// do not delete it immediately the first time it is polled
+			const viable = parents[ pid ].poll_counter++ > 0
+
+			if ( !alive[ pid ] && viable ) {
 				const name = parents[ pid ].name
 				if ( name != null ) {
 					doomChildrenByName( name )
