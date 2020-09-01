@@ -1,6 +1,6 @@
 {
   "name": "nozombie",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "track pocesses and make sure they die when they are supposed to",
   "main": "src/main.js",
   "files": [
