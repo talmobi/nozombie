@@ -201,18 +201,27 @@ async function tick ()
 
 async function killChild ( pid, signal )
 {
+	signal = signal || 'SIGKILL'
+
 	const child = children[ pid ]
 	child.kill_attempts = child.kill_attempts || 0
 	child.should_be_killed = true // attempt periodically every tick (~1second)
-
-	signal = signal || 'SIGKILL'
-	if ( child.kill_attempts > 0 ) signal = 'SIGKILL'
+	if ( child.kill_attempts++ > 0 ) signal = 'SIGKILL'
 
 	log( 'killing child: ' + pid )
 	return new Promise( function ( resolve, reject ) {
+		const timeout = setTimeout( finish, 3000 )
+
+		function finish () {
+			clearTimeout( timeout )
+			if ( finish.called ) return
+			finish.called = true
+			resolve()
+		}
+
 		treeKill( pid, signal, function ( err ) {
 			if ( err ) log( err ) // ignore
-			resolve()
+			finish()
 		} )
 	} )
 }
