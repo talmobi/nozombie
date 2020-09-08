@@ -16,6 +16,7 @@ function uuid () {
 		'nz' +
 		Math.random().toString( 16 ).slice( 4, 10 ) +
 		unix_time.toString( 16 ).slice( -6 ) +
+		String( process.pid ) +
 		String( n )
 	)
 }
