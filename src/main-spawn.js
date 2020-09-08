@@ -57,6 +57,21 @@ async function get_messages ()
 {
 	// read commands from user process and update pid lists
 	log( 'ticking' )
+	const stat = await util.stat( tempfile )
+	const lastStat = get_messages._lastStat
+	if ( !stat ) return
+
+	if ( lastStat ) {
+		const sizeChanged = ( stat.size !== lastStat.size )
+		const mtimeChanged = ( stat.mtime > lastStat.mtime )
+		if ( sizeChanged || mtimeChanged ) {} else {
+			return
+		}
+	}
+
+	// set _lastStat to the last time we read the file
+	get_messages._lastStat = stat
+
 	const text = ( await util.readFile( tempfile ) ).trim()
 	const lines = text.split( /[\r\n]+/ )
 	log( 'got lines: ' + lines.length )

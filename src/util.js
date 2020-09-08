@@ -20,6 +20,21 @@ util.fileExists = function ( filepath ) {
 				} )
 			} else {
 				reject()
+
+util.stat = function ( filepath ) {
+	const start_time = Date.now()
+
+	return new Promise( function ( resolve, reject ) {
+		nextAttempt()
+		function nextAttempt () {
+			const delta = ( Date.now() - start_time )
+			if ( delta < MAX_ATTEMPT_TIME_MS ) {
+				fs.stat( filepath, function ( err, stat ) {
+					if ( err ) return setTimeout( nextAttempt, INTERVAL_ATTEMPT_MS )
+					resolve( stat )
+				} )
+			} else {
+				resolve()
 			}
 		}
 	} )
