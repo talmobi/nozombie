@@ -19,7 +19,7 @@ if ( debugging ) {
 const INTERVAL_PID_POLL_MS = 1000
 
 // time to read new actions from the user process
-const INTERVAL_READ_POLL_MS = 200
+const INTERVAL_READ_POLL_MS = 250
 
 // time to kill children before exiting even if children are left alive
 // after the main_parent_pid process has exited
