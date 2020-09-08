@@ -9,7 +9,7 @@ const main_parent_pid = Number( args[ 0 ] ) // main parent pid
 const tempfile = String( args[ 1 ] ) // read commands from main parent from this file
 const logfile = String( args[ 2 ] ) // write debug logs to this file when debugging
 
-const debugging = !!args[ 3 ]
+const debugging = ( String( args[ 3 ] ) === 'true' )
 
 if ( debugging ) {
 	fs.writeFileSync( logfile, '// https://github.com/talmobi/nozombie\n', 'utf8' )
