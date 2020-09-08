@@ -6,21 +6,6 @@ const fs = require( 'fs' )
 const INTERVAL_ATTEMPT_MS = 333
 const MAX_ATTEMPT_TIME_MS = 1000
 
-util.fileExists = function ( filepath ) {
-	const start_time = Date.now()
-
-	return new Promise( function ( resolve, reject ) {
-		nextAttempt()
-		function nextAttempt () {
-			const delta = ( Date.now() - start_time )
-			if ( delta < MAX_ATTEMPT_TIME_MS ) {
-				fs.stat( filepath, function ( err, stat ) {
-					if ( err ) return setTimeout( nextAttempt, INTERVAL_ATTEMPT_MS )
-					resolve()
-				} )
-			} else {
-				reject()
-
 util.stat = function ( filepath ) {
 	const start_time = Date.now()
 
