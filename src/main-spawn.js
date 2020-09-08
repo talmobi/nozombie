@@ -118,17 +118,23 @@ function isRunning ( pid ) {
 
 async function update_pids ()
 {
-	// get fresh list of alive pids
-	const alive = {}
+  // get fresh list of alive pids
+  const alive = {}
 
+  // copy over parent pids for checking
   for ( let pid in parents ) {
-    alive[ pid ] = isRunning( pid )
+    alive[ pid ] = false
   }
 
+  // copy over children pids for checking
   for ( let pid in children ) {
-    // skip if this pid has already been checked
-    if ( alive[ pid ] != null ) continue
+    alive[ pid ] = false
+  }
 
+  // note: a pid can be both a parent and a child
+  // example: if any parent dies, all other parents should also die, in
+  // that case the parent pids should also be added as children
+  for ( let pid in alive ) {
     alive[ pid ] = isRunning( pid )
   }
 
