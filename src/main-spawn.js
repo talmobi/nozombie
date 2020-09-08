@@ -1,5 +1,4 @@
 const fs = require( 'fs' )
-const psList = require( 'ps-list' )
 const treeKill = require( 'tree-kill' )
 
 const util = require( './util.js' )
@@ -119,10 +118,6 @@ function isRunning ( pid ) {
 
 async function update_pids ()
 {
-	// we have to check ps-list even if we have no children in order to know
-	// when our parent pid dies
-	// if ( Object.keys( children ).length <= 0 ) return
-
 	// get fresh list of alive pids
 	const alive = {}
 
