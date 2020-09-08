@@ -108,6 +108,15 @@ async function get_messages ()
 	await processMessages( messages )
 }
 
+function isRunning ( pid ) {
+  // ref: https://github.com/nisaacson/is-running/blob/master/index.js
+  try {
+    return process.kill( pid, 0 )
+  } catch ( err ) {
+    return err.code === 'EPERM'
+  }
+}
+
 async function update_pids ()
 {
 	// we have to check ps-list even if we have no children in order to know
@@ -116,12 +125,17 @@ async function update_pids ()
 
 	// get fresh list of alive pids
 	const alive = {}
-	;( await psList() ).forEach( function ( { pid } ) {
-		// note: a pid can be both a parent and a child
-		// example: if any parent dies, all other parents should also die, in
-		// that case the parent pids should also be added as children
-		alive[ pid ] = true
-	} )
+
+  for ( let pid in parents ) {
+    alive[ pid ] = isRunning( pid )
+  }
+
+  for ( let pid in children ) {
+    // skip if this pid has already been checked
+    if ( alive[ pid ] != null ) continue
+
+    alive[ pid ] = isRunning( pid )
+  }
 
 	// update list of children and remove pid's that have died. We need to do
 	// this because process pid's are re-used and becomes available after a
